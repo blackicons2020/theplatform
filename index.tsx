@@ -811,6 +811,7 @@ const AdminDashboard: React.FC<{
     setTitle('');
     setContent('');
     setImagePreview('');
+    alert('Article Published!');
   };
 
   return (
@@ -1008,12 +1009,12 @@ const Footer: React.FC<{ onNavigate: (view: string) => void }> = ({ onNavigate }
           <h3 className="font-bold mb-6 text-lg text-gray-900 dark:text-white">News Sections</h3>
           <ul className="space-y-3 text-gray-600 dark:text-gray-400 text-sm">
             <li className="hover:text-naija cursor-pointer transition-colors flex items-center gap-2"><ChevronRight className="w-3 h-3" /> Politics</li>
-            {/* ✅ NEW CATEGORY: METRO */}
+            {/* ✅ METRO */}
             <li className="hover:text-naija cursor-pointer transition-colors flex items-center gap-2"><ChevronRight className="w-3 h-3" /> Metro</li>
             <li className="hover:text-naija cursor-pointer transition-colors flex items-center gap-2"><ChevronRight className="w-3 h-3" /> Business</li>
             <li className="hover:text-naija cursor-pointer transition-colors flex items-center gap-2"><ChevronRight className="w-3 h-3" /> Technology</li>
             <li className="hover:text-naija cursor-pointer transition-colors flex items-center gap-2"><ChevronRight className="w-3 h-3" /> Sports</li>
-            {/* ✅ NEW CATEGORY: EDUCATION */}
+            {/* ✅ EDUCATION */}
             <li className="hover:text-naija cursor-pointer transition-colors flex items-center gap-2"><ChevronRight className="w-3 h-3" /> Education</li>
             <li className="hover:text-naija cursor-pointer transition-colors flex items-center gap-2"><ChevronRight className="w-3 h-3" /> Editorials</li>
           </ul>
@@ -1076,6 +1077,8 @@ const Footer: React.FC<{ onNavigate: (view: string) => void }> = ({ onNavigate }
 const App: React.FC = () => {
   const [view, setView] = useState('home');
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+  
+  // REAL DATA STATES
   const [articles, setArticles] = useState<Article[]>([]);
   const [pendingArticles, setPendingArticles] = useState<Article[]>([]);
   const [ads, setAds] = useState<Advertisement[]>([]);
@@ -1228,10 +1231,8 @@ const App: React.FC = () => {
   // Mix sponsored articles into feed
   const displayFeed = [...filteredArticles];
   sponsoredAds.forEach((ad, index) => {
-    // Insert sponsored content every 3 items if possible
     const insertIndex = (index + 1) * 3;
     if (insertIndex < displayFeed.length) {
-       // Create a pseudo-article from the ad
        const adArticle: any = { isAd: true, data: ad, id: `ad-${ad.id}` };
        displayFeed.splice(insertIndex, 0, adArticle);
     }
@@ -1373,9 +1374,6 @@ const App: React.FC = () => {
           <ArticleReader 
             article={selectedArticle} 
             onBack={() => setView('home')}
-            comments={comments[selectedArticle.id] || []}
-            onAddComment={handleAddComment}
-            onDeleteComment={handleDeleteComment}
             isAdmin={isAdmin}
           />
         )}
