@@ -5,12 +5,15 @@ import {
   Bookmark, X, Camera, Send, CheckCircle, AlertCircle, 
   TrendingUp, Shield, FileText, Users, DollarSign, 
   LayoutGrid, PenTool, Image as ImageIcon, Sun, Moon,
-  CreditCard, Trash2, Lock, Globe, Facebook, Twitter, Instagram, Linkedin, Youtube
+  CreditCard, Trash2, Lock, Globe, Facebook, Twitter, Instagram, Linkedin, Youtube,
+  Link as LinkIcon
 } from 'lucide-react';
 
 // --- Configuration ---
 // ✅ LIVE BACKEND URL
 const API_URL = "https://platform-backend-54nn.onrender.com/api"; 
+// ✅ LIVE FRONTEND URL (For sharing links - Update this to your Vercel domain later if needed)
+const APP_URL = window.location.origin; 
 
 // --- Types ---
 
@@ -26,7 +29,7 @@ interface Comment {
 interface Article {
   id: string;
   title: string;
-  subHeadline?: string; // NEW
+  subHeadline?: string;
   category: string;
   author: string;
   date: string;
@@ -38,10 +41,9 @@ interface Article {
   status?: string;
 }
 
-// Helper to match Database columns (snake_case) to Frontend (camelCase)
 const mapArticleFromDB = (dbArticle: any): Article => ({
   ...dbArticle,
-  subHeadline: dbArticle.sub_headline, // Map new column
+  subHeadline: dbArticle.sub_headline,
   isBreaking: dbArticle.is_breaking, 
   date: new Date(dbArticle.date).toLocaleDateString() 
 });
@@ -70,6 +72,20 @@ const readFileAsDataURL = (file: File): Promise<string> => {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+};
+
+const handleSocialShare = (platform: string, title: string) => {
+    const text = encodeURIComponent(`Read this on The People's Platform: ${title}`);
+    const url = encodeURIComponent(APP_URL);
+    
+    let shareLink = '';
+    switch(platform) {
+        case 'facebook': shareLink = `https://www.facebook.com/sharer/sharer.php?u=${url}`; break;
+        case 'twitter': shareLink = `https://twitter.com/intent/tweet?text=${text}&url=${url}`; break;
+        case 'whatsapp': shareLink = `https://wa.me/?text=${text}%20${url}`; break;
+        case 'linkedin': shareLink = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`; break;
+    }
+    if(shareLink) window.open(shareLink, '_blank');
 };
 
 // --- Components ---
@@ -227,6 +243,7 @@ const ArticleReader: React.FC<{
     const [commentName, setCommentName] = useState('');
     const [commentEmail, setCommentEmail] = useState('');
     const [commentContent, setCommentContent] = useState('');
+    const [showShareMenu, setShowShareMenu] = useState(false);
   
     const relatedArticles = allArticles
       .filter(a => a.category === article.category && a.id !== article.id)
@@ -295,7 +312,6 @@ const ArticleReader: React.FC<{
               <h1 className="text-3xl md:text-4xl font-serif font-bold text-white leading-tight">
                 {article.title}
               </h1>
-              {/* SUB-HEADLINE DISPLAY */}
               {article.subHeadline && (
                 <p className="text-gray-200 text-xl font-medium mt-2">{article.subHeadline}</p>
               )}
@@ -303,7 +319,7 @@ const ArticleReader: React.FC<{
           </div>
   
           <div className="p-8">
-            <div className="flex items-center justify-between py-6 border-b border-gray-100 dark:border-gray-700 mb-8">
+            <div className="flex items-center justify-between py-6 border-b border-gray-100 dark:border-gray-700 mb-8 relative">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
                   <User className="w-6 h-6 text-gray-400" />
@@ -314,9 +330,30 @@ const ArticleReader: React.FC<{
                 </div>
               </div>
               <div className="flex gap-2">
-                <button className="p-2 text-gray-400 hover:text-naija transition-colors">
-                  <Share2 className="w-5 h-5" />
-                </button>
+                <div className="relative">
+                    <button 
+                        onClick={() => setShowShareMenu(!showShareMenu)}
+                        className="p-2 text-gray-400 hover:text-naija transition-colors"
+                    >
+                        <Share2 className="w-5 h-5" />
+                    </button>
+                    {showShareMenu && (
+                        <div className="absolute right-0 top-10 bg-white dark:bg-gray-700 shadow-xl rounded-lg p-2 flex flex-col gap-2 min-w-[150px] z-20 border border-gray-100 dark:border-gray-600">
+                             <button onClick={() => handleSocialShare('whatsapp', article.title)} className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-sm text-left dark:text-white">
+                                <MessageSquare className="w-4 h-4 text-green-500" /> WhatsApp
+                             </button>
+                             <button onClick={() => handleSocialShare('facebook', article.title)} className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-sm text-left dark:text-white">
+                                <Facebook className="w-4 h-4 text-blue-600" /> Facebook
+                             </button>
+                             <button onClick={() => handleSocialShare('twitter', article.title)} className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-sm text-left dark:text-white">
+                                <Twitter className="w-4 h-4 text-sky-400" /> Twitter
+                             </button>
+                             <button onClick={() => handleSocialShare('linkedin', article.title)} className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-sm text-left dark:text-white">
+                                <Linkedin className="w-4 h-4 text-blue-700" /> LinkedIn
+                             </button>
+                        </div>
+                    )}
+                </div>
                 <button className="p-2 text-gray-400 hover:text-naija transition-colors">
                   <Bookmark className="w-5 h-5" />
                 </button>
@@ -335,7 +372,7 @@ const ArticleReader: React.FC<{
             </div>
           </div>
   
-          {/* RELATED ARTICLES SECTION */}
+          {/* RELATED ARTICLES */}
           {relatedArticles.length > 0 && (
               <div className="p-8 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">You might also like</h3>
@@ -359,7 +396,7 @@ const ArticleReader: React.FC<{
               </div>
           )}
   
-          {/* Advertisement Placeholder */}
+          {/* Advertisement */}
           <div className="bg-white dark:bg-gray-800 p-8 text-center border-t border-gray-100 dark:border-gray-700">
             <p className="text-sm text-gray-400 uppercase tracking-widest mb-2">Advertisement</p>
             <div className="h-32 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
@@ -367,7 +404,7 @@ const ArticleReader: React.FC<{
             </div>
           </div>
   
-          {/* Comments Section */}
+          {/* Comments */}
           <div className="p-8 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-naija" />
@@ -819,14 +856,15 @@ const AdminDashboard: React.FC<{
   // Compose/Edit State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
-  const [subHeadline, setSubHeadline] = useState(''); // NEW
+  const [subHeadline, setSubHeadline] = useState('');
   const [category, setCategory] = useState('Politics');
-  const [authorName, setAuthorName] = useState('Staff Reporter'); // NEW
-  const [showAuthor, setShowAuthor] = useState(true); // NEW: Toggle
+  const [authorName, setAuthorName] = useState('Staff Reporter');
+  const [showAuthor, setShowAuthor] = useState(true);
   const [content, setContent] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isBreaking, setIsBreaking] = useState(false);
+  const [lastPublishedTitle, setLastPublishedTitle] = useState<string | null>(null);
 
   const [viewAdId, setViewAdId] = useState<string | null>(null);
 
@@ -883,7 +921,7 @@ const AdminDashboard: React.FC<{
       setEditingId(null);
     } else {
       onPublish(article);
-      alert('Article Published Live!');
+      setLastPublishedTitle(article.title);
     }
     
     // Reset Form
@@ -932,6 +970,7 @@ const AdminDashboard: React.FC<{
                 setSubHeadline('');
                 setContent('');
                 setImagePreview('');
+                setLastPublishedTitle(null);
             }} 
             className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap ${activeTab === 'compose' ? 'bg-gray-900 text-white' : 'bg-white text-gray-600'}`}
           >
@@ -969,6 +1008,7 @@ const AdminDashboard: React.FC<{
           </div>
         )}
 
+        {/* Pending Articles, Ads tabs remain same */}
         {activeTab === 'pending' && (
           <div className="grid gap-4">
             {pendingArticles.length === 0 ? <p className="text-gray-500">No pending submissions.</p> : 
@@ -1032,78 +1072,93 @@ const AdminDashboard: React.FC<{
 
         {activeTab === 'compose' && (
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
-            <h3 className="text-xl font-bold mb-4 dark:text-white">{editingId ? 'Edit Article' : 'Compose New Article'}</h3>
-            <form onSubmit={handlePublishOrUpdate} className="space-y-4">
-              {/* HEADLINE & SUB-HEADLINE */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-bold mb-1 dark:text-white">Main Headline</label>
-                    <input value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white" required />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold mb-1 dark:text-white">Sub-Headline</label>
-                    <input value={subHeadline} onChange={e => setSubHeadline(e.target.value)} className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white" placeholder="Optional" />
-                  </div>
-              </div>
-
-              {/* CATEGORY & AUTHOR */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-bold mb-1 dark:text-white">Category</label>
-                    <select value={category} onChange={e => setCategory(e.target.value)} className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white">
-                      <option>Politics</option>
-                      <option>Metro</option>
-                      <option>Business</option>
-                      <option>Technology</option>
-                      <option>Sports</option>
-                      <option>Entertainment</option>
-                      <option>Education</option>
-                      <option>Editorials</option>
-                    </select>
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                        <label className="text-sm font-bold dark:text-white">Author Name</label>
-                        <div className="flex items-center gap-2">
-                            <input 
-                                type="checkbox" 
-                                id="showAuthor" 
-                                checked={showAuthor} 
-                                onChange={e => setShowAuthor(e.target.checked)} 
-                                className="w-4 h-4"
-                            />
-                            <label htmlFor="showAuthor" className="text-xs text-gray-500">Show on Article</label>
+            {lastPublishedTitle ? (
+                 <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center mb-6">
+                     <div className="flex justify-center mb-2"><CheckCircle className="w-12 h-12 text-green-500" /></div>
+                     <h3 className="text-xl font-bold text-green-800 mb-2">Article Published Successfully!</h3>
+                     <p className="text-green-700 mb-4">"{lastPublishedTitle}" is now live.</p>
+                     
+                     <div className="flex flex-col md:flex-row items-center justify-center gap-4">
+                         <span className="text-sm font-bold text-gray-600">Share to Official Channels:</span>
+                         <button onClick={() => handleSocialShare('facebook', lastPublishedTitle)} className="flex items-center gap-2 px-4 py-2 bg-[#1877F2] text-white rounded hover:opacity-90"><Facebook className="w-4 h-4" /> Facebook</button>
+                         <button onClick={() => handleSocialShare('twitter', lastPublishedTitle)} className="flex items-center gap-2 px-4 py-2 bg-[#1DA1F2] text-white rounded hover:opacity-90"><Twitter className="w-4 h-4" /> Twitter</button>
+                     </div>
+                     <button onClick={() => setLastPublishedTitle(null)} className="mt-6 text-sm text-gray-500 underline">Write another article</button>
+                 </div>
+            ) : (
+                <>
+                    <h3 className="text-xl font-bold mb-4 dark:text-white">{editingId ? 'Edit Article' : 'Compose New Article'}</h3>
+                    <form onSubmit={handlePublishOrUpdate} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-bold mb-1 dark:text-white">Main Headline</label>
+                            <input value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white" required />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold mb-1 dark:text-white">Sub-Headline</label>
+                            <input value={subHeadline} onChange={e => setSubHeadline(e.target.value)} className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white" placeholder="Optional" />
                         </div>
                     </div>
-                    <input 
-                        value={authorName} 
-                        onChange={e => setAuthorName(e.target.value)} 
-                        className={`w-full p-2 border rounded dark:bg-gray-700 dark:text-white ${!showAuthor ? 'opacity-50' : ''}`} 
-                        disabled={!showAuthor}
-                    />
-                  </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-bold mb-1 dark:text-white">Feature Image</label>
-                <input type="file" onChange={handleImageChange} className="w-full text-sm dark:text-white" />
-                {imagePreview && <img src={imagePreview} className="h-20 mt-2 rounded" />}
-              </div>
 
-              <div>
-                <label className="block text-sm font-bold mb-1 dark:text-white">Article Content</label>
-                <textarea value={content} onChange={e => setContent(e.target.value)} className="w-full p-2 border rounded h-64 dark:bg-gray-700 dark:text-white" required />
-              </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-bold mb-1 dark:text-white">Category</label>
+                            <select value={category} onChange={e => setCategory(e.target.value)} className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white">
+                            <option>Politics</option>
+                            <option>Metro</option>
+                            <option>Business</option>
+                            <option>Technology</option>
+                            <option>Sports</option>
+                            <option>Entertainment</option>
+                            <option>Education</option>
+                            <option>Editorials</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div className="flex justify-between items-center mb-1">
+                                <label className="text-sm font-bold dark:text-white">Author Name</label>
+                                <div className="flex items-center gap-2">
+                                    <input 
+                                        type="checkbox" 
+                                        id="showAuthor" 
+                                        checked={showAuthor} 
+                                        onChange={e => setShowAuthor(e.target.checked)} 
+                                        className="w-4 h-4"
+                                    />
+                                    <label htmlFor="showAuthor" className="text-xs text-gray-500">Show on Article</label>
+                                </div>
+                            </div>
+                            <input 
+                                value={authorName} 
+                                onChange={e => setAuthorName(e.target.value)} 
+                                className={`w-full p-2 border rounded dark:bg-gray-700 dark:text-white ${!showAuthor ? 'opacity-50' : ''}`} 
+                                disabled={!showAuthor}
+                            />
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label className="block text-sm font-bold mb-1 dark:text-white">Feature Image</label>
+                        <input type="file" onChange={handleImageChange} className="w-full text-sm dark:text-white" />
+                        {imagePreview && <img src={imagePreview} className="h-20 mt-2 rounded" />}
+                    </div>
 
-              <div className="flex items-center gap-2">
-                <input type="checkbox" checked={isBreaking} onChange={e => setIsBreaking(e.target.checked)} id="breaking" />
-                <label htmlFor="breaking" className="text-sm font-bold text-red-600">Mark as Breaking News</label>
-              </div>
+                    <div>
+                        <label className="block text-sm font-bold mb-1 dark:text-white">Article Content</label>
+                        <textarea value={content} onChange={e => setContent(e.target.value)} className="w-full p-2 border rounded h-64 dark:bg-gray-700 dark:text-white" required />
+                    </div>
 
-              <button type="submit" className="bg-naija text-white px-6 py-3 rounded font-bold w-full hover:bg-green-700">
-                {editingId ? 'Update Article' : 'Publish Live'}
-              </button>
-            </form>
+                    <div className="flex items-center gap-2">
+                        <input type="checkbox" checked={isBreaking} onChange={e => setIsBreaking(e.target.checked)} id="breaking" />
+                        <label htmlFor="breaking" className="text-sm font-bold text-red-600">Mark as Breaking News</label>
+                    </div>
+
+                    <button type="submit" className="bg-naija text-white px-6 py-3 rounded font-bold w-full hover:bg-green-700">
+                        {editingId ? 'Update Article' : 'Publish Live'}
+                    </button>
+                    </form>
+                </>
+            )}
           </div>
         )}
       </div>
@@ -1469,11 +1524,11 @@ const App: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-white mb-4 leading-tight">
+                      <h2 className="text-xl md:text-2xl lg:text-3xl font-serif font-bold text-white mb-2 leading-tight shadow-sm">
                         {filteredArticles[0].title}
                       </h2>
-                      <p className="text-gray-200 line-clamp-2 text-lg max-w-2xl">
-                        {filteredArticles[0].excerpt}
+                      <p className="text-gray-100 text-sm md:text-base line-clamp-2 max-w-2xl font-medium drop-shadow-md">
+                        {filteredArticles[0].subHeadline || filteredArticles[0].excerpt}
                       </p>
                     </div>
                   </div>
