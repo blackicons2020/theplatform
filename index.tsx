@@ -719,7 +719,7 @@ const StaffLoginPage: React.FC<{ onLogin: () => void; onBack: () => void }> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === 'admin') {
+    if (password === 'adminOdohhhhh1@') {
       onLogin();
     } else {
       setError('Invalid Access Code');
