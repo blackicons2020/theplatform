@@ -6,7 +6,7 @@ import {
   TrendingUp, Shield, FileText, Users, DollarSign, 
   LayoutGrid, PenTool, Image as ImageIcon, Sun, Moon,
   CreditCard, Trash2, Lock, Globe, Facebook, Twitter, Instagram, Linkedin, Youtube,
-  Link as LinkIcon
+  Link as LinkIcon, ExternalLink
 } from 'lucide-react';
 
 // --- Configuration ---
@@ -41,6 +41,7 @@ interface Article {
   status?: string;
 }
 
+// Helper to match Database columns (snake_case) to Frontend (camelCase)
 const mapArticleFromDB = (dbArticle: any): Article => ({
   ...dbArticle,
   subHeadline: dbArticle.sub_headline,
@@ -75,7 +76,7 @@ const readFileAsDataURL = (file: File): Promise<string> => {
 };
 
 const handleSocialShare = (platform: string, title: string) => {
-    const text = encodeURIComponent(`Read this on The People's Platform: ${title}`);
+    const text = encodeURIComponent(`Read this on The Platform: ${title}`);
     const url = encodeURIComponent(APP_URL);
     
     let shareLink = '';
@@ -103,7 +104,7 @@ const Header: React.FC<{
         <div className="bg-gray-100 dark:bg-gray-800 w-full overflow-hidden h-24 md:h-32 relative flex items-center justify-center">
           <a href={activeAd.adUrl || '#'} target={activeAd.adUrl ? "_blank" : "_self"} rel="noreferrer" className="w-full h-full">
              {activeAd.adImage ? (
-               <img src={activeAd.adImage} alt="Advertisement" className="w-full h-full object-cover" />
+               <img src={activeAd.adImage} alt="Advertisement" className="w-full h-full object-cover object-center" />
              ) : (
                <div className="flex items-center justify-center h-full text-gray-400 text-sm">Leaderboard Ad Area</div>
              )}
@@ -119,7 +120,7 @@ const Header: React.FC<{
             </div>
             <div className="flex flex-col justify-center">
               <h1 className="font-sans text-lg md:text-xl font-bold text-gray-900 dark:text-white tracking-tight leading-none">
-                The People’s Platform
+                The Platform
               </h1>
             </div>
           </div>
@@ -154,13 +155,13 @@ const Header: React.FC<{
 const ArticleCard: React.FC<{ article: Article; onClick: () => void }> = ({ article, onClick }) => (
   <div 
     onClick={onClick}
-    className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100 dark:border-gray-700 flex flex-col"
+    className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100 dark:border-gray-700 flex flex-col h-full"
   >
-    <div className="relative h-48 overflow-hidden flex-shrink-0">
+    <div className="relative h-48 w-full overflow-hidden flex-shrink-0">
       <img 
         src={article.image || 'https://via.placeholder.com/400'} 
         alt={article.title}
-        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
       />
        {article.isBreaking && (
           <div className="absolute top-4 left-4">
@@ -201,12 +202,12 @@ const ArticleCard: React.FC<{ article: Article; onClick: () => void }> = ({ arti
 );
 
 const SponsoredArticleCard: React.FC<{ ad: Advertisement }> = ({ ad }) => (
-  <div className="group bg-green-50 dark:bg-green-900/20 rounded-xl overflow-hidden shadow-sm border-2 border-green-100 dark:border-green-800/50 flex flex-col">
-    <div className="relative h-48 overflow-hidden flex-shrink-0">
+  <div className="group bg-green-50 dark:bg-green-900/20 rounded-xl overflow-hidden shadow-sm border-2 border-green-100 dark:border-green-800/50 flex flex-col h-full">
+    <div className="relative h-48 w-full overflow-hidden flex-shrink-0">
       <img 
         src={ad.adImage || 'https://via.placeholder.com/800x400?text=Sponsored+Content'} 
         alt={ad.clientName}
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover object-center"
       />
       <div className="absolute top-4 left-4">
         <span className="bg-yellow-500 text-black text-xs font-bold px-3 py-1 rounded-full shadow-md uppercase tracking-wider">
@@ -304,26 +305,28 @@ const ArticleReader: React.FC<{
         </button>
   
         <article className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden mb-8">
-          {/* IMAGE SECTION - NO TEXT OVERLAY */}
+          {/* IMAGE SECTION - CLEAN, NO TEXT */}
           <div className="h-64 md:h-[500px] w-full relative">
             <img 
               src={article.image || 'https://via.placeholder.com/800'} 
               alt={article.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover object-center"
             />
           </div>
   
           <div className="p-8">
-            {/* HEADER SECTION - TEXT BELOW IMAGE */}
+            {/* TITLE & METADATA SECTION - BELOW IMAGE */}
             <div className="mb-8">
-                <span className="bg-naija text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-4 inline-block">
-                    {article.category}
-                </span>
+                <div className="mb-4">
+                    <span className="bg-naija text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                        {article.category}
+                    </span>
+                </div>
                 <h1 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 dark:text-white leading-tight mb-4">
                     {article.title}
                 </h1>
                 {article.subHeadline && (
-                    <p className="text-xl text-gray-600 dark:text-gray-300 font-medium leading-relaxed">
+                    <p className="text-xl text-gray-600 dark:text-gray-300 font-medium leading-relaxed border-l-4 border-naija pl-4">
                         {article.subHeadline}
                     </p>
                 )}
@@ -344,6 +347,7 @@ const ArticleReader: React.FC<{
                     <button 
                         onClick={() => setShowShareMenu(!showShareMenu)}
                         className="p-2 text-gray-400 hover:text-naija transition-colors"
+                        title="Share this article"
                     >
                         <Share2 className="w-5 h-5" />
                     </button>
@@ -370,7 +374,7 @@ const ArticleReader: React.FC<{
               </div>
             </div>
   
-            {/* CONTENT - FULL JUSTIFICATION APPLIED */}
+            {/* CONTENT - FULLY JUSTIFIED TEXT */}
             <div className="prose dark:prose-invert max-w-none">
               <div className="text-gray-800 dark:text-gray-200 leading-loose space-y-4 text-lg">
                 {article.content.split('\n').map((paragraph, idx) => (
@@ -391,8 +395,8 @@ const ArticleReader: React.FC<{
                               onClick={() => onNavigateToArticle(rel)}
                               className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm hover:shadow-md cursor-pointer transition-all flex flex-col"
                           >
-                              <div className="h-32 overflow-hidden flex-shrink-0">
-                                  <img src={rel.image} alt={rel.title} className="w-full h-full object-cover" />
+                              <div className="h-32 w-full overflow-hidden flex-shrink-0">
+                                  <img src={rel.image} alt={rel.title} className="w-full h-full object-cover object-center" />
                               </div>
                               <div className="p-4 flex flex-col flex-grow">
                                   <span className="text-xs text-naija font-bold uppercase mb-1">{rel.category}</span>
@@ -621,7 +625,6 @@ const SubmitNewsPage: React.FC<{
   );
 };
 
-// ... AdvertisePage, StaffLoginPage ... (Keep exactly as before)
 const AdvertisePage: React.FC<{ 
   onBack: () => void;
   onSubmitAd: (ad: Advertisement) => void;
@@ -697,7 +700,7 @@ const AdvertisePage: React.FC<{
       </button>
 
       <div className="text-center mb-12">
-        <h2 className="text-3xl font-serif font-bold text-gray-900 dark:text-white mb-4">Advertise with The People’s Platform</h2>
+        <h2 className="text-3xl font-serif font-bold text-gray-900 dark:text-white mb-4">Advertise with The Platform</h2>
         <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">Reach millions of Nigerians daily. Choose the plan that fits your brand.</p>
       </div>
 
@@ -909,7 +912,7 @@ const AdminDashboard: React.FC<{
     e.preventDefault();
     
     // Determine author logic
-    const finalAuthor = showAuthor ? authorName : "The People's Platform";
+    const finalAuthor = showAuthor ? authorName : "The Platform";
 
     const article: any = {
       title,
@@ -1192,7 +1195,7 @@ const Footer: React.FC<{ onNavigate: (view: string) => void }> = ({ onNavigate }
             </div>
             <div className="flex flex-col justify-center">
               <h2 className="font-sans text-lg font-bold text-gray-900 dark:text-white tracking-tight leading-none">
-                The People’s Platform
+                The Platform
               </h2>
             </div>
           </div>
@@ -1262,7 +1265,7 @@ const Footer: React.FC<{ onNavigate: (view: string) => void }> = ({ onNavigate }
       {/* Copyright Row */}
       <div className="text-center pt-4">
           <p className="text-gray-500 dark:text-gray-400 text-xs">
-            &copy; 2024 The People’s Platform. All rights reserved.
+            &copy; 2024 The Platform. All rights reserved.
           </p>
       </div>
     </div>
@@ -1282,17 +1285,16 @@ const App: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [loading, setLoading] = useState(true);
 
-  // FAVICON EFFECT: This adds the logo to the browser tab
+  // FAVICON EFFECT
   useEffect(() => {
     const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
     if (!link) {
       const newLink = document.createElement('link');
       newLink.rel = 'icon';
-      // Basic SVG data URI for the Globe icon used in the app
       newLink.href = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23008753' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><line x1='2' y1='12' x2='22' y2='12'></line><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'></path></svg>";
       document.head.appendChild(newLink);
     }
-    document.title = "The People's Platform";
+    document.title = "The Platform";
   }, []);
 
   // FETCH DATA ON LOAD
@@ -1529,7 +1531,7 @@ const App: React.FC = () => {
                     <img 
                       src={filteredArticles[0].image || 'https://via.placeholder.com/800'} 
                       alt={filteredArticles[0].title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
                     />
                     {filteredArticles[0].isBreaking && (
                        <div className="absolute top-4 left-4">
@@ -1575,7 +1577,7 @@ const App: React.FC = () => {
                   {sidebarAd ? (
                       <div className="bg-gray-100 dark:bg-gray-800 h-64 rounded-xl flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 dark:border-gray-700 overflow-hidden relative group">
                          <a href={sidebarAd.adUrl || '#'} target={sidebarAd.adUrl ? "_blank" : "_self"} className="w-full h-full">
-                           <img src={sidebarAd.adImage} className="w-full h-full object-cover" />
+                           <img src={sidebarAd.adImage} className="w-full h-full object-cover object-center" />
                            <span className="absolute bottom-2 right-2 bg-white/80 text-black text-[10px] px-1 rounded">Ad</span>
                          </a>
                       </div>
