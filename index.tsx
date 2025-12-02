@@ -10,12 +10,8 @@ import {
 } from 'lucide-react';
 
 // --- Configuration ---
-// ✅ LIVE BACKEND URL
 const API_URL = "https://platform-backend-54nn.onrender.com/api"; 
-// ✅ LIVE FRONTEND URL (For sharing links)
 const APP_URL = window.location.origin; 
-
-// ✅ CENTRAL CATEGORIES LIST
 const CATEGORIES = [
   'Politics', 'Metro', 'Business', 'Technology', 'Sports', 
   'Entertainment', 'Education', 'Leadership', 'Editorials'
@@ -89,7 +85,7 @@ function Header({ onNavigate, toggleTheme, isDark, activeAd }: any) {
             {isDark ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-gray-600" />}
           </button>
           <button onClick={() => onNavigate('submit')} className="hidden md:flex items-center gap-1 bg-naija text-white px-3 py-1.5 rounded-full text-xs font-medium">
-            <PenTool className="w-3 h-3" /> Submit
+            <PenTool className="w-3 h-3" /> Submit News
           </button>
           <button onClick={() => onNavigate('advertise')} className="hidden md:flex items-center gap-1 border border-naija text-naija px-3 py-1.5 rounded-full text-xs font-medium">Advertise</button>
         </div>
@@ -136,6 +132,7 @@ function SponsoredArticleCard({ ad }: { ad: Advertisement }) {
 }
 
 function Footer({ onNavigate, onCategorySelect }: any) {
+  const currentYear = new Date().getFullYear();
   return (
     <footer className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white pt-10 pb-6 border-t border-gray-200 dark:border-gray-700 mt-auto">
       <div className="max-w-7xl mx-auto px-4">
@@ -167,10 +164,9 @@ function Footer({ onNavigate, onCategorySelect }: any) {
             <div className="flex gap-2 mb-4">
               {[Facebook, Twitter, Instagram, Linkedin, Youtube].map((Icon,i)=>(<button key={i} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-naija hover:text-white transition-colors"><Icon className="w-4 h-4"/></button>))}
             </div>
-            <p className="text-[10px] text-gray-400">Email: <a href="mailto:theplatformreport@gmail.com" className="hover:text-naija">theplatformreport@gmail.com</a></p>
           </div>
         </div>
-        <div className="text-center text-xs text-gray-400">&copy; 2024 The Platform. All rights reserved.</div>
+        <div className="text-center text-xs text-gray-400">&copy; {currentYear} The Platform. All rights reserved.</div>
       </div>
     </footer>
   );
@@ -381,11 +377,42 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
   );
 }
 
-// --- AdvertisePage Component (REPAIRED) ---
+function SubmitNewsPage({ onBack, onSubmit }: any) {
+  const [form, setForm] = useState({ title: '', category: 'Politics', content: '', image: '' });
+  
+  const submit = (e: any) => {
+    e.preventDefault();
+    onSubmit({ ...form, author: 'Citizen Reporter' });
+  };
+
+  const handleFile = async (e: any) => {
+    if(e.target.files?.[0]) setForm({...form, image: await readFileAsDataURL(e.target.files[0])});
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-8">
+      <button onClick={onBack} className="mb-6 flex items-center text-gray-500 text-sm"><ChevronRight className="w-4 h-4 rotate-180"/> Back</button>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
+        <h2 className="text-2xl font-bold mb-6 dark:text-white">Submit Story</h2>
+        <form onSubmit={submit} className="space-y-4">
+            <input required placeholder="Headline" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} className="w-full border p-3 rounded" />
+            <select value={form.category} onChange={e=>setForm({...form, category:e.target.value})} className="w-full border p-3 rounded">
+                {CATEGORIES.map(c=><option key={c}>{c}</option>)}
+            </select>
+            <input type="file" onChange={handleFile} className="text-sm" />
+            <textarea required placeholder="Content" value={form.content} onChange={e=>setForm({...form, content:e.target.value})} className="w-full border p-3 rounded h-40" />
+            <button className="bg-naija text-white w-full py-3 rounded font-bold">Submit for Review</button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// --- AdvertisePage Component (FIXED) ---
 function AdvertisePage({ onBack, onSubmitAd }: any) {
   const [showModal, setShowModal] = useState(false);
   const [step, setStep] = useState<'info' | 'form'>('info');
-  const [plan, setPlan] = useState<any>(null);
+  const [selectedPlan, setSelectedPlan] = useState<any>(null); // Store whole plan object
   
   // Form State
   const [client, setClient] = useState('');
@@ -394,7 +421,7 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
   const [content, setContent] = useState('');
   const [receipt, setReceipt] = useState('');
   const [adImg, setAdImg] = useState('');
-  const [adDoc, setAdDoc] = useState(''); // File content
+  const [adDoc, setAdDoc] = useState(''); 
 
   const plans = [
     { name: 'Sidebar Banner', price: 20000, features: ['Visible on all article pages', 'Square format', 'Weekly rotation'] },
@@ -408,18 +435,12 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
-    if(!plan || !receipt) return;
+    if(!selectedPlan || !receipt) return;
     onSubmitAd({
-      clientName: client, email, plan: plan.name, amount: plan.price,
+      clientName: client, email, plan: selectedPlan.name, amount: selectedPlan.price,
       receiptImage: receipt, adImage: adImg, adHeadline: headline, adContent: content, adContentFile: adDoc
     });
     setShowModal(false);
-  };
-
-  const handlePlanSelect = (p: any) => {
-    setPlan(p);
-    setStep('info');
-    setShowModal(true);
   };
 
   return (
@@ -446,7 +467,7 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
             </div>
             <div className="p-6 pt-0">
               <button 
-                onClick={() => handlePlanSelect(p)}
+                onClick={() => { setSelectedPlan(p); setStep('info'); setShowModal(true); }}
                 className="w-full bg-black text-white py-2 rounded-lg text-sm mt-auto"
               >
                 Choose Plan
@@ -457,7 +478,7 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
       </div>
 
       {/* Payment Modal */}
-      {showPaymentModal && (
+      {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-900 rounded-xl w-full max-w-xs max-h-[70vh] overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col">
             <div className="p-3 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800 shrink-0">
@@ -469,7 +490,7 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
               {step === 'info' ? (
                 <div className="text-center space-y-3">
                   <div className="bg-green-50 dark:bg-gray-800 p-3 rounded-lg border border-green-100 dark:border-gray-600">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Pay <span className="font-bold text-black dark:text-white">₦{plan?.price?.toLocaleString()}</span> to:</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Pay <span className="font-bold text-black dark:text-white">₦{selectedPlan?.price?.toLocaleString() || '0'}</span> to:</p>
                     <p className="font-bold text-sm text-naija mt-1">4092144856</p>
                     <p className="text-xs font-bold text-gray-700 dark:text-gray-300">Polaris Bank</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Clean Connect</p>
@@ -485,7 +506,7 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
                   <textarea placeholder="Ad Content (Optional)" value={content} onChange={e => setContent(e.target.value)} className="w-full p-2 text-xs border rounded h-16 dark:bg-gray-800 dark:border-gray-700 dark:text-white resize-none outline-none focus:border-naija" />
                   
                   <div className="text-xs">
-                    <label className="block mb-1 font-bold dark:text-gray-300 flex items-center gap-1"><UploadCloud className="w-3 h-3"/> Upload Material (Doc/PDF)</label>
+                    <label className="block mb-1 font-bold dark:text-gray-300 flex items-center gap-1"><Upload className="w-3 h-3"/> Upload Material (Doc/PDF)</label>
                     <input type="file" onChange={e => handleFile(e, setAdDoc)} className="w-full text-[10px] dark:text-gray-400" />
                   </div>
 
@@ -494,7 +515,7 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
                     <input type="file" required accept="image/*" onChange={e => handleFile(e, setAdImg)} className="w-full text-[10px] dark:text-gray-400" />
                   </div>
 
-                  <div className="text-xs border-t pt-2 dark:border-gray-700">
+                  <div className="text-xs">
                     <label className="block mb-1 font-bold dark:text-gray-300">Payment Receipt</label>
                     <input type="file" required accept="image/*" onChange={e => handleFile(e, setReceipt)} className="w-full text-[10px] dark:text-gray-400" />
                   </div>
@@ -525,7 +546,7 @@ function App() {
   // Initial Load
   useEffect(() => {
     const link = document.createElement('link'); link.rel='icon'; 
-    link.href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23008753' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><line x1='2' y1='12' x2='22' y2='12'></line><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z'></path></svg>";
+    link.href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23008753' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><line x1='2' y1='12' x2='22' y2='12'></line><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'></path></svg>";
     document.head.appendChild(link);
     document.title = "The Platform";
 
@@ -639,7 +660,6 @@ function App() {
 
                 {filtered.length > 0 && (
                     <div className="mb-12 grid lg:grid-cols-3 gap-8">
-                        {/* HERO */}
                         <div className="lg:col-span-2 cursor-pointer group" onClick={()=> {setSelectedArticle(filtered[0]); setView('article');}}>
                             <div className="relative h-[400px] rounded-xl overflow-hidden mb-4">
                                 <img src={filtered[0].image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 object-center" />
@@ -651,7 +671,6 @@ function App() {
                                 <p className="text-gray-600 dark:text-gray-400 line-clamp-2">{filtered[0].subHeadline || filtered[0].excerpt}</p>
                             </div>
                         </div>
-                        {/* SIDEBAR */}
                         <div className="space-y-6">
                             <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border dark:border-gray-700">
                                 <h3 className="font-bold mb-4 dark:text-white flex items-center gap-2"><TrendingUp className="w-4 h-4 text-naija"/> Trending</h3>
@@ -664,7 +683,6 @@ function App() {
                                     ))}
                                 </div>
                             </div>
-                            {/* SIDE AD */}
                             {activeAds.find(a=>a.plan==='Sidebar Banner') ? (
                                 <a href={activeAds.find(a=>a.plan==='Sidebar Banner')?.adUrl||'#'} target="_blank" className="block h-64 bg-gray-100 rounded-xl overflow-hidden relative">
                                     <img src={activeAds.find(a=>a.plan==='Sidebar Banner')?.adImage} className="w-full h-full object-cover object-center" />
