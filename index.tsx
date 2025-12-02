@@ -6,7 +6,7 @@ import {
   TrendingUp, Shield, FileText, Users, DollarSign, 
   LayoutGrid, PenTool, Image as ImageIcon, Sun, Moon,
   CreditCard, Trash2, Lock, Globe, Facebook, Twitter, Instagram, Linkedin, Youtube,
-  Link as LinkIcon, ExternalLink, ArrowRight, RefreshCw, UploadCloud
+  Link as LinkIcon, ExternalLink, ArrowRight, RefreshCw, UploadCloud, MapPin, Mail, Phone
 } from 'lucide-react';
 
 // --- Configuration ---
@@ -15,8 +15,13 @@ const API_URL = "https://platform-backend-54nn.onrender.com/api";
 // ✅ LIVE FRONTEND URL (For sharing links)
 const APP_URL = window.location.origin; 
 
+// ✅ CENTRAL CATEGORIES LIST (Ensures consistency everywhere)
+const CATEGORIES = [
+  'Politics', 'Metro', 'Business', 'Technology', 'Sports', 
+  'Entertainment', 'Education', 'Leadership', 'Editorials'
+];
+
 // --- Error Boundary Component ---
-// This prevents the "White Screen" crash if data loading fails
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {
     super(props);
@@ -76,7 +81,7 @@ const handleSocialShare = (platform: string, title: string) => {
 
 // --- Components ---
 
-function Header({ onNavigate, toggleTheme, isDark, activeAd }: any) {
+function Header({ onNavigate, toggleTheme, isDark, activeAd, onCategorySelect }: any) {
   return (
     <header className="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
       {activeAd && (
@@ -143,9 +148,11 @@ function SponsoredArticleCard({ ad }: { ad: Advertisement }) {
   );
 }
 
-function Footer({ onNavigate }: any) {
+function Footer({ onNavigate, onCategorySelect }: any) {
+  const currentYear = new Date().getFullYear();
+  
   return (
-    <footer className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white pt-10 pb-6 border-t border-gray-200 dark:border-gray-700 mt-auto">
+    <footer className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white pt-12 pb-8 border-t border-gray-200 dark:border-gray-700 mt-auto">
       <div className="max-w-7xl mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 border-b border-gray-100 dark:border-gray-700 pb-8">
           <div className="col-span-1">
@@ -153,33 +160,146 @@ function Footer({ onNavigate }: any) {
               <div className="w-8 h-8 bg-naija rounded-full flex items-center justify-center text-white font-bold"><Globe className="w-5 h-5"/></div>
               <h2 className="font-bold text-lg">The Platform</h2>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Empowering voices through unbiased reporting and community-driven journalism.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+              Empowering voices through unbiased reporting and community-driven journalism. We stand for truth, transparency, and the progress of our nation.
+            </p>
           </div>
+          
           <div>
-            <h3 className="font-bold mb-4 text-sm">News</h3>
+            <h3 className="font-bold mb-4 text-sm uppercase tracking-wider">News Categories</h3>
             <ul className="space-y-2 text-xs text-gray-500 dark:text-gray-400">
-              {['Politics','Metro','Business','Technology','Sports'].map(i=><li key={i} className="hover:text-naija cursor-pointer">{i}</li>)}
+              {CATEGORIES.map((cat) => (
+                <li 
+                    key={cat} 
+                    className="hover:text-naija cursor-pointer transition-colors flex items-center gap-1"
+                    onClick={() => { 
+                        onNavigate('home'); 
+                        onCategorySelect(cat); 
+                        window.scrollTo(0,0);
+                    }}
+                >
+                   <ChevronRight className="w-3 h-3" /> {cat}
+                </li>
+              ))}
             </ul>
           </div>
+
           <div>
-            <h3 className="font-bold mb-4 text-sm">Company</h3>
+            <h3 className="font-bold mb-4 text-sm uppercase tracking-wider">Company</h3>
             <ul className="space-y-2 text-xs text-gray-500 dark:text-gray-400">
-              <li className="hover:text-naija cursor-pointer" onClick={()=>onNavigate('home')}>Home</li>
-              <li className="hover:text-naija cursor-pointer" onClick={()=>onNavigate('advertise')}>Advertise</li>
+              <li className="hover:text-naija cursor-pointer" onClick={()=>{onNavigate('home'); window.scrollTo(0,0);}}>Home</li>
+              <li className="hover:text-naija cursor-pointer" onClick={()=>{onNavigate('advertise'); window.scrollTo(0,0);}}>Advertise</li>
+              <li className="hover:text-naija cursor-pointer" onClick={()=>{onNavigate('support'); window.scrollTo(0,0);}}>Support & Contact</li>
               <li className="hover:text-naija cursor-pointer text-naija font-bold mt-2 pt-2 border-t dark:border-gray-700" onClick={()=>onNavigate('login')}>Staff Access</li>
             </ul>
           </div>
+
           <div>
-            <h3 className="font-bold mb-4 text-sm">Connect</h3>
+            <h3 className="font-bold mb-4 text-sm uppercase tracking-wider">Connect</h3>
             <div className="flex gap-2 mb-4">
-              {[Facebook, Twitter, Instagram, Linkedin, Youtube].map((Icon,i)=>(<button key={i} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-naija hover:text-white transition-colors"><Icon className="w-4 h-4"/></button>))}
+                <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-[#1877F2] hover:text-white transition-colors"><Facebook className="w-4 h-4"/></a>
+                <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-[#1DA1F2] hover:text-white transition-colors"><Twitter className="w-4 h-4"/></a>
+                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-[#E4405F] hover:text-white transition-colors"><Instagram className="w-4 h-4"/></a>
+                <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-[#0A66C2] hover:text-white transition-colors"><Linkedin className="w-4 h-4"/></a>
+                <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-[#FF0000] hover:text-white transition-colors"><Youtube className="w-4 h-4"/></a>
             </div>
+            <p className="text-[10px] text-gray-400">Email us: <a href="mailto:theplatformreport@gmail.com" className="hover:text-naija">theplatformreport@gmail.com</a></p>
           </div>
         </div>
-        <div className="text-center text-xs text-gray-400">&copy; 2024 The Platform. All rights reserved.</div>
+        <div className="text-center text-xs text-gray-400 border-t border-gray-100 dark:border-gray-700 pt-6">
+            &copy; {currentYear} The Platform. All rights reserved.
+        </div>
       </div>
     </footer>
   );
+}
+
+function SupportPage({ onBack }: any) {
+    const [submitted, setSubmitted] = useState(false);
+    
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        setSubmitted(true);
+        // In a real app, you would send this to your backend
+        setTimeout(() => {
+            setSubmitted(false);
+            alert("Message sent successfully! We will get back to you shortly.");
+        }, 2000);
+    };
+
+    return (
+        <div className="max-w-4xl mx-auto px-4 py-12">
+            <button onClick={onBack} className="flex items-center gap-1 text-gray-500 mb-8 text-sm hover:text-naija"><ChevronRight className="w-4 h-4 rotate-180"/> Back to Home</button>
+            
+            <div className="grid md:grid-cols-2 gap-12">
+                {/* Contact Information */}
+                <div>
+                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Contact & Support</h2>
+                    <p className="text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+                        Have questions, news tips, or advertising inquiries? Reach out to us. We are here to help and listen to our community.
+                    </p>
+
+                    <div className="space-y-6">
+                        <div className="flex items-start gap-4">
+                            <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-full shrink-0">
+                                <MapPin className="w-6 h-6 text-naija" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-gray-900 dark:text-white mb-1">Our Office Address</h3>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                                    Suite 0.02, Maryam Babangida National Centre for Women Development,<br/>
+                                    Opposite Central Bank of Nigeria Headquarters,<br/>
+                                    Central Business District, Abuja, FCT.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-start gap-4">
+                            <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-full shrink-0">
+                                <Mail className="w-6 h-6 text-naija" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-gray-900 dark:text-white mb-1">Email Us</h3>
+                                <a href="mailto:theplatformreport@gmail.com" className="text-sm text-naija hover:underline">theplatformreport@gmail.com</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Contact Form */}
+                <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Send us a message</h3>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Full Name</label>
+                            <input required className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 dark:text-white focus:ring-2 focus:ring-naija outline-none transition-all" placeholder="Your name" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Email Address</label>
+                            <input required type="email" className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 dark:text-white focus:ring-2 focus:ring-naija outline-none transition-all" placeholder="you@example.com" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Subject</label>
+                            <select className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 dark:text-white focus:ring-2 focus:ring-naija outline-none transition-all">
+                                <option>General Inquiry</option>
+                                <option>News Tip / Submission</option>
+                                <option>Advertising Support</option>
+                                <option>Technical Issue</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Message</label>
+                            <textarea required rows={4} className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 dark:text-white focus:ring-2 focus:ring-naija outline-none transition-all resize-none" placeholder="How can we help you?"></textarea>
+                        </div>
+                        <button disabled={submitted} className="w-full bg-black hover:bg-gray-800 text-white font-bold py-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                            {submitted ? 'Sending...' : 'Send Message'} <Send className="w-4 h-4" />
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
 }
 
 function AdvertisePage({ onBack, onSubmitAd }: any) {
@@ -232,6 +352,7 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
           <div key={p.name} className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border dark:border-gray-700 text-center flex flex-col h-full">
             <h3 className="font-bold text-lg dark:text-white">{p.name}</h3>
             <p className="text-2xl font-bold text-naija my-4">₦{p.price.toLocaleString()}</p>
+            {/* RESTORED FEATURES LIST */}
             <div className="flex-grow text-left space-y-2 mb-4">
               {p.features.map((feature, idx) => (
                 <div key={idx} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
@@ -287,7 +408,7 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
                     <input type="file" required accept="image/*" onChange={e => handleFile(e, setReceipt)} className="w-full text-[10px] dark:text-gray-400" />
                   </div>
 
-                  <button type="submit" className="w-full bg-naija text-white py-2 rounded text-xs font-bold mt-2 shadow-md hover:bg-green-700">Submit</button>
+                  <button type="submit" className="w-full bg-naija text-white py-2 rounded text-xs font-bold mt-2 shadow-md hover:bg-green-700">Submit Proof & Creative</button>
                 </form>
               )}
             </div>
@@ -487,7 +608,7 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
                     <input placeholder="Sub-Headline" value={form.subHeadline} onChange={e=>setForm({...form, subHeadline:e.target.value})} className="w-full border p-2 rounded text-sm" />
                     <div className="grid grid-cols-2 gap-4">
                         <select value={form.category} onChange={e=>setForm({...form, category:e.target.value})} className="border p-2 rounded text-sm">
-                            {['Politics','Metro','Business','Technology','Sports','Entertainment','Education','Editorials'].map(c=><option key={c}>{c}</option>)}
+                            {CATEGORIES.map(c=><option key={c}>{c}</option>)}
                         </select>
                         <div className="flex items-center gap-2">
                             <input type="checkbox" checked={showAuthor} onChange={e=>setShowAuthor(e.target.checked)} />
@@ -556,7 +677,7 @@ function SubmitNewsPage({ onBack, onSubmit }: any) {
         <form onSubmit={submit} className="space-y-4">
             <input required placeholder="Headline" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} className="w-full border p-3 rounded" />
             <select value={form.category} onChange={e=>setForm({...form, category:e.target.value})} className="w-full border p-3 rounded">
-                {['Politics','Metro','Business','Technology','Sports','Entertainment','Education','Editorials'].map(c=><option key={c}>{c}</option>)}
+                {CATEGORIES.map(c=><option key={c}>{c}</option>)}
             </select>
             <input type="file" onChange={handleFile} className="text-sm" />
             <textarea required placeholder="Content" value={form.content} onChange={e=>setForm({...form, content:e.target.value})} className="w-full border p-3 rounded h-40" />
@@ -582,7 +703,7 @@ function App() {
   // Initial Load
   useEffect(() => {
     const link = document.createElement('link'); link.rel='icon'; 
-    link.href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23008753' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><line x1='2' y1='12' x2='22' y2='12'></line><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'></path></svg>";
+    link.href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23008753' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><line x1='2' y1='12' x2='22' y2='12'></line><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z'></path></svg>";
     document.head.appendChild(link);
     document.title = "The Platform";
 
@@ -655,6 +776,7 @@ function App() {
   // Rendering
   if(loading) return <div className="min-h-screen flex items-center justify-center"><RefreshCw className="animate-spin text-green-600"/></div>;
   if(view === 'login') return <StaffLoginPage onLogin={handleAdminLogin} onBack={()=>setView('home')}/>;
+  if(view === 'support') return <SupportPage onBack={()=>setView('home')}/>;
   if(view === 'admin' && isAdmin) return <AdminDashboard articles={articles} pendingArticles={pending} ads={ads} onPublish={publishNews} onUpdate={updateNews} onDelete={deleteNews} onApproveSubmission={approveArticle} onRejectSubmission={(id:string)=>setPending(pending.filter(a=>a.id!==id))} onApproveAd={approveAd} onRejectAd={(id:string)=>setAds(ads.filter(a=>a.id!==id))} onLogout={()=>{setIsAdmin(false); setView('home');}} />;
 
   const filtered = cat === 'All' ? articles : articles.filter(a => a.category === cat);
@@ -673,7 +795,7 @@ function App() {
         {view === 'home' && (
             <div className="max-w-7xl mx-auto px-4 py-6">
                 <div className="flex gap-2 overflow-x-auto pb-4 mb-4 scrollbar-hide">
-                    {['All','Politics','Metro','Business','Technology','Sports','Entertainment','Education','Editorials'].map(c => (
+                    {['All', ...CATEGORIES].map(c => (
                         <button key={c} onClick={()=>setCat(c)} className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap ${cat===c ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'}`}>{c}</button>
                     ))}
                 </div>
@@ -738,7 +860,7 @@ function App() {
         {view === 'submit' && <SubmitNewsPage onBack={()=>setView('home')} onSubmit={publishNews} />}
         {view === 'advertise' && <AdvertisePage onBack={()=>setView('home')} onSubmitAd={submitAd} />}
       </main>
-      <Footer onNavigate={setView} />
+      <Footer onNavigate={setView} onCategorySelect={setCat} />
     </div>
   );
 }
