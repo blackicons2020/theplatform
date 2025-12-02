@@ -16,6 +16,7 @@ const API_URL = "https://platform-backend-54nn.onrender.com/api";
 const APP_URL = window.location.origin; 
 
 // --- Error Boundary Component ---
+// This prevents the "White Screen" crash if data loading fails
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {
     super(props);
@@ -36,10 +37,10 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-center p-4">
           <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong.</h1>
-          <p className="text-gray-600 mb-6">We couldn't load the application correctly.</p>
+          <p className="text-gray-600 mb-6">We couldn't load the application correctly. Please refresh.</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="bg-gray-900 text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+            className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors"
           >
             Reload Page
           </button>
@@ -77,7 +78,7 @@ interface Article {
   status?: string;
 }
 
-// Helper to match Database columns (snake_case) to Frontend (camelCase)
+// Helper to map Database columns to Frontend
 const mapArticleFromDB = (dbArticle: any): Article => ({
   ...dbArticle,
   subHeadline: dbArticle.sub_headline || '',
@@ -127,13 +128,7 @@ const handleSocialShare = (platform: string, title: string) => {
 
 // --- Components ---
 
-const Header: React.FC<{ 
-  onNavigate: (view: string) => void; 
-  toggleTheme: () => void; 
-  isDark: boolean;
-  activeAd?: Advertisement;
-  onCategorySelect: (category: string) => void;
-}> = ({ onNavigate, toggleTheme, isDark, activeAd, onCategorySelect }) => {
+function Header({ onNavigate, toggleTheme, isDark, activeAd }: any) {
   return (
     <header className="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-300">
       {activeAd && (
@@ -186,483 +181,99 @@ const Header: React.FC<{
       </div>
     </header>
   );
-};
+}
 
-const ArticleCard: React.FC<{ article: Article; onClick: () => void }> = ({ article, onClick }) => (
-  <div 
-    onClick={onClick}
-    className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100 dark:border-gray-700 flex flex-col h-full"
-  >
-    <div className="relative h-48 w-full overflow-hidden flex-shrink-0">
-      <img 
-        src={article.image || 'https://via.placeholder.com/400'} 
-        alt={article.title}
-        className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-      />
-       {article.isBreaking && (
-          <div className="absolute top-4 left-4">
-            <span className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md animate-pulse flex items-center gap-1">
-                <TrendingUp className="w-3 h-3" /> Breaking
-            </span>
-          </div>
-        )}
-    </div>
-    <div className="p-5 flex flex-col flex-grow">
-      <div className="mb-3">
-        <span className="bg-naija text-white text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wider inline-block mb-2">
-            {article.category}
-        </span>
-         <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-            <span className="font-medium text-gray-900 dark:text-gray-200">{article.author}</span>
-            <span>•</span>
-            <span>{article.date}</span>
-        </div>
-      </div>
-     
-      <h3 className="font-serif text-xl font-bold text-gray-900 dark:text-white mb-2 leading-tight group-hover:text-naija transition-colors line-clamp-3">
-        {article.title}
-      </h3>
-      <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed line-clamp-3 mb-4 flex-grow">
-        {article.excerpt}
-      </p>
-      <div className="mt-auto flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
-        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1">
-          <Users className="w-3 h-3" /> {article.views} reads
-        </span>
-        <span className="text-naija text-sm font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-          Read Article <ChevronRight className="w-4 h-4" />
-        </span>
-      </div>
-    </div>
-  </div>
-);
-
-const SponsoredArticleCard: React.FC<{ ad: Advertisement }> = ({ ad }) => (
-  <div className="group bg-green-50 dark:bg-green-900/20 rounded-xl overflow-hidden shadow-sm border-2 border-green-100 dark:border-green-800/50 flex flex-col h-full">
-    <div className="relative h-48 w-full overflow-hidden flex-shrink-0">
-      <img 
-        src={ad.adImage || 'https://via.placeholder.com/800x400?text=Sponsored+Content'} 
-        alt={ad.clientName}
-        className="w-full h-full object-cover object-center"
-      />
-      <div className="absolute top-4 left-4">
-        <span className="bg-yellow-500 text-black text-xs font-bold px-3 py-1 rounded-full shadow-md uppercase tracking-wider">
-          Sponsored
-        </span>
-      </div>
-    </div>
-    <div className="p-5 flex flex-col flex-grow">
-      <h3 className="font-serif text-xl font-bold text-gray-900 dark:text-white mb-2 leading-tight line-clamp-3">
-        {ad.adHeadline || `Spotlight on ${ad.clientName}`}
-      </h3>
-      <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed line-clamp-3 mb-4 flex-grow">
-        {ad.adContent || "Check out this special feature from our partners."}
-      </p>
-      <div className="mt-auto">
-        {ad.adUrl && (
-            <a 
-            href={ad.adUrl} 
-            target="_blank" 
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 text-sm font-bold text-naija hover:underline"
-            >
-            Visit Website <ChevronRight className="w-4 h-4" />
-            </a>
-        )}
-      </div>
-    </div>
-  </div>
-);
-
-const ArticleReader: React.FC<{ 
-    article: Article; 
-    allArticles: Article[]; 
-    onBack: () => void;
-    onNavigateToArticle: (article: Article) => void;
-    isAdmin: boolean;
-  }> = ({ article, allArticles, onBack, onNavigateToArticle, isAdmin }) => {
-    const [comments, setComments] = useState<Comment[]>([]);
-    const [commentName, setCommentName] = useState('');
-    const [commentEmail, setCommentEmail] = useState('');
-    const [commentContent, setCommentContent] = useState('');
-    const [showShareMenu, setShowShareMenu] = useState(false);
-  
-    const relatedArticles = allArticles
-      .filter(a => a.category === article.category && a.id !== article.id)
-      .slice(0, 3);
-  
-    useEffect(() => {
-      window.scrollTo(0, 0);
-    }, [article.id]);
-  
-    useEffect(() => {
-      fetch(`${API_URL}/articles/${article.id}/comments`)
-        .then(res => res.json())
-        .then(data => {
-            if(Array.isArray(data)) setComments(data);
-        })
-        .catch(err => console.error("Error fetching comments:", err));
-    }, [article.id]);
-  
-    const handleSubmitComment = async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!commentName.trim() || !commentContent.trim() || !commentEmail.trim()) return;
-  
-      try {
-          const res = await fetch(`${API_URL}/comments`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                  articleId: article.id,
-                  author: commentName,
-                  email: commentEmail,
-                  content: commentContent
-              })
-          });
-  
-          if (res.ok) {
-              const newComment = await res.json();
-              setComments([newComment, ...comments]);
-              setCommentName('');
-              setCommentEmail('');
-              setCommentContent('');
-          }
-      } catch (err) {
-          console.error("Error posting comment", err);
-          alert("Failed to post comment");
-      }
-    };
-  
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <button 
-          onClick={onBack}
-          className="flex items-center gap-2 text-gray-500 hover:text-naija mb-6 transition-colors"
-        >
-          <ChevronRight className="w-4 h-4 rotate-180" /> Back to News
-        </button>
-  
-        <article className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden mb-8">
-          <div className="h-64 md:h-[500px] w-full relative">
-            <img 
-              src={article.image || 'https://via.placeholder.com/800'} 
-              alt={article.title}
-              className="w-full h-full object-cover object-center"
-            />
-          </div>
-  
-          <div className="p-8">
-            <div className="mb-8">
-                <div className="mb-4">
-                    <span className="bg-naija text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
-                        {article.category}
-                    </span>
-                </div>
-                <h1 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 dark:text-white leading-tight mb-4">
-                    {article.title}
-                </h1>
-                {article.subHeadline && (
-                    <p className="text-xl text-gray-600 dark:text-gray-300 font-medium leading-relaxed border-l-4 border-naija pl-4">
-                        {article.subHeadline}
-                    </p>
-                )}
-            </div>
-
-            <div className="flex items-center justify-between py-6 border-y border-gray-100 dark:border-gray-700 mb-8 relative">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                  <User className="w-6 h-6 text-gray-400" />
-                </div>
-                <div>
-                  <p className="font-bold text-gray-900 dark:text-white">{article.author}</p>
-                  <p className="text-sm text-gray-500">{article.date}</p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <div className="relative">
-                    <button 
-                        onClick={() => setShowShareMenu(!showShareMenu)}
-                        className="p-2 text-gray-400 hover:text-naija transition-colors"
-                        title="Share this article"
-                    >
-                        <Share2 className="w-5 h-5" />
-                    </button>
-                    {showShareMenu && (
-                        <div className="absolute right-0 top-10 bg-white dark:bg-gray-700 shadow-xl rounded-lg p-2 flex flex-col gap-2 min-w-[150px] z-20 border border-gray-100 dark:border-gray-600">
-                             <button onClick={() => handleSocialShare('whatsapp', article.title)} className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-sm text-left dark:text-white">
-                                <MessageSquare className="w-4 h-4 text-green-500" /> WhatsApp
-                             </button>
-                             <button onClick={() => handleSocialShare('facebook', article.title)} className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-sm text-left dark:text-white">
-                                <Facebook className="w-4 h-4 text-blue-600" /> Facebook
-                             </button>
-                             <button onClick={() => handleSocialShare('twitter', article.title)} className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-sm text-left dark:text-white">
-                                <Twitter className="w-4 h-4 text-sky-400" /> Twitter
-                             </button>
-                             <button onClick={() => handleSocialShare('linkedin', article.title)} className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-sm text-left dark:text-white">
-                                <Linkedin className="w-4 h-4 text-blue-700" /> LinkedIn
-                             </button>
-                        </div>
-                    )}
-                </div>
-                <button className="p-2 text-gray-400 hover:text-naija transition-colors">
-                  <Bookmark className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-  
-            <div className="prose dark:prose-invert max-w-none">
-              <div className="text-gray-800 dark:text-gray-200 leading-loose space-y-4 text-lg">
-                {(article.content || '').split('\n').map((paragraph, idx) => (
-                  <p key={idx} className="text-justify">{paragraph}</p> 
-                ))}
-              </div>
-            </div>
-          </div>
-  
-          {/* RELATED ARTICLES */}
-          {relatedArticles.length > 0 && (
-              <div className="p-8 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">You might also like</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {relatedArticles.map(rel => (
-                          <div 
-                              key={rel.id} 
-                              onClick={() => onNavigateToArticle(rel)}
-                              className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm hover:shadow-md cursor-pointer transition-all flex flex-col"
-                          >
-                              <div className="h-32 w-full overflow-hidden flex-shrink-0">
-                                  <img src={rel.image} alt={rel.title} className="w-full h-full object-cover object-center" />
-                              </div>
-                              <div className="p-4 flex flex-col flex-grow">
-                                  <span className="text-xs text-naija font-bold uppercase mb-1">{rel.category}</span>
-                                  <h4 className="font-bold text-sm text-gray-900 dark:text-white leading-tight line-clamp-2 flex-grow">{rel.title}</h4>
-                              </div>
-                          </div>
-                      ))}
-                  </div>
-              </div>
-          )}
-  
-          <div className="bg-white dark:bg-gray-800 p-8 text-center border-t border-gray-100 dark:border-gray-700">
-            <p className="text-sm text-gray-400 uppercase tracking-widest mb-2">Advertisement</p>
-            <div className="h-32 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
-              <span className="text-gray-400 font-medium">Place your ad here</span>
-            </div>
-          </div>
-  
-          <div className="p-8 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-naija" />
-              Comments ({comments.length})
-            </h3>
-  
-            <form onSubmit={handleSubmitComment} className="mb-8 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    required
-                    value={commentName}
-                    onChange={(e) => setCommentName(e.target.value)}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent dark:text-white focus:ring-2 focus:ring-naija focus:border-transparent outline-none transition-all"
-                    placeholder="Your name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email <span className="text-red-500">*</span></label>
-                  <input
-                    type="email"
-                    required
-                    value={commentEmail}
-                    onChange={(e) => setCommentEmail(e.target.value)}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent dark:text-white focus:ring-2 focus:ring-naija focus:border-transparent outline-none transition-all"
-                    placeholder="john@example.com"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Your email will not be published.</p>
-                </div>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Comment <span className="text-red-500">*</span></label>
-                <textarea
-                  required
-                  value={commentContent}
-                  onChange={(e) => setCommentContent(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent dark:text-white focus:ring-2 focus:ring-naija focus:border-transparent outline-none transition-all h-24 resize-none"
-                  placeholder="Share your thoughts..."
-                ></textarea>
-              </div>
-              <button 
-                type="submit"
-                className="bg-naija hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-              >
-                <Send className="w-4 h-4" /> Post Comment
-              </button>
-            </form>
-  
-            <div className="space-y-4">
-              {comments.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">Be the first to comment!</p>
-              ) : (
-                comments.map(comment => (
-                  <div key={comment.id} className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-naija/10 rounded-full flex items-center justify-center text-naija font-bold text-xs">
-                          {comment.author.substring(0, 2).toUpperCase()}
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-sm text-gray-900 dark:text-white">{comment.author}</h4>
-                          <span className="text-xs text-gray-500">{new Date(comment.date).toLocaleString()}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-gray-700 dark:text-gray-300 text-sm pl-11">{comment.content}</p>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </article>
-      </div>
-    );
-  };
-
-const SubmitNewsPage: React.FC<{ 
-  onBack: () => void; 
-  onSubmit: (article: Article) => void;
-}> = ({ onBack, onSubmit }) => {
-  const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('Technology');
-  const [content, setContent] = useState('');
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>('');
-
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setImageFile(file);
-      try {
-        const base64 = await readFileAsDataURL(file);
-        setImagePreview(base64);
-      } catch (err) {
-        console.error("Error reading file", err);
-      }
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // PUBLIC SUBMISSION: NO STATUS SENT (Defaults to pending)
-    const articleData: any = {
-      title,
-      category,
-      author: 'Citizen Reporter',
-      image: imagePreview || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&q=80&w=1000',
-      excerpt: content.substring(0, 100) + '...',
-      content,
-    };
-
-    onSubmit(articleData);
-  };
-
+function ArticleCard({ article, onClick }: any) {
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <button onClick={onBack} className="mb-6 flex items-center text-gray-600 dark:text-gray-400">
-        <ChevronRight className="w-4 h-4 rotate-180" /> Back
-      </button>
-      
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full">
-            <PenTool className="w-6 h-6 text-naija" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Submit a Story</h2>
-            <p className="text-gray-500 text-sm">Share news from your community</p>
+    <div 
+      onClick={onClick}
+      className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100 dark:border-gray-700 flex flex-col h-full"
+    >
+      <div className="relative h-48 w-full overflow-hidden flex-shrink-0">
+        <img 
+          src={article.image || 'https://via.placeholder.com/400'} 
+          alt={article.title}
+          className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+        />
+         {article.isBreaking && (
+            <div className="absolute top-4 left-4">
+              <span className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md animate-pulse flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3" /> Breaking
+              </span>
+            </div>
+          )}
+      </div>
+      <div className="p-5 flex flex-col flex-grow">
+        <div className="mb-3">
+          <span className="bg-naija text-white text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wider inline-block mb-2">
+              {article.category}
+          </span>
+           <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+              <span className="font-medium text-gray-900 dark:text-gray-200">{article.author}</span>
+              <span>•</span>
+              <span>{article.date}</span>
           </div>
         </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
-            <select 
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent dark:text-white"
-            >
-              <option>Politics</option>
-              <option>Metro</option>
-              <option>Business</option>
-              <option>Technology</option>
-              <option>Sports</option>
-              <option>Entertainment</option>
-              <option>Education</option>
-              <option>Editorials</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Upload Image</label>
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer relative">
-              <input 
-                type="file" 
-                accept="image/*" 
-                onChange={handleImageChange}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
-              {imagePreview ? (
-                <img src={imagePreview} alt="Preview" className="h-40 mx-auto object-cover rounded-md" />
-              ) : (
-                <div className="flex flex-col items-center text-gray-500">
-                  <ImageIcon className="w-8 h-8 mb-2" />
-                  <span className="text-sm">Click to upload image from device</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Content</label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent dark:text-white h-40"
-              placeholder="Write your story here..."
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Headline</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent dark:text-white"
-              placeholder="Enter article headline"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-naija hover:bg-green-700 text-white font-bold py-3 rounded-lg transition-colors shadow-lg"
-          >
-            Submit for Review
-          </button>
-        </form>
+       
+        <h3 className="font-serif text-xl font-bold text-gray-900 dark:text-white mb-2 leading-tight group-hover:text-naija transition-colors line-clamp-3">
+          {article.title}
+        </h3>
+        <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed line-clamp-3 mb-4 flex-grow">
+          {article.excerpt}
+        </p>
+        <div className="mt-auto flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1">
+            <Users className="w-3 h-3" /> {article.views} reads
+          </span>
+          <span className="text-naija text-sm font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+            Read Article <ChevronRight className="w-4 h-4" />
+          </span>
+        </div>
       </div>
     </div>
   );
-};
+}
 
-// --- AdvertisePage Component with Two-Step Modal ---
-const AdvertisePage: React.FC<{ 
-  onBack: () => void;
-  onSubmitAd: (ad: Advertisement) => void;
-}> = ({ onBack, onSubmitAd }) => {
+function SponsoredArticleCard({ ad }: { ad: Advertisement }) {
+  return (
+    <div className="group bg-green-50 dark:bg-green-900/20 rounded-xl overflow-hidden shadow-sm border-2 border-green-100 dark:border-green-800/50 flex flex-col h-full">
+      <div className="relative h-48 w-full overflow-hidden flex-shrink-0">
+        <img 
+          src={ad.adImage || 'https://via.placeholder.com/800x400?text=Sponsored+Content'} 
+          alt={ad.clientName}
+          className="w-full h-full object-cover object-center"
+        />
+        <div className="absolute top-4 left-4">
+          <span className="bg-yellow-500 text-black text-xs font-bold px-3 py-1 rounded-full shadow-md uppercase tracking-wider">
+            Sponsored
+          </span>
+        </div>
+      </div>
+      <div className="p-5 flex flex-col flex-grow">
+        <h3 className="font-serif text-xl font-bold text-gray-900 dark:text-white mb-2 leading-tight line-clamp-3">
+          {ad.adHeadline || `Spotlight on ${ad.clientName}`}
+        </h3>
+        <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed line-clamp-3 mb-4 flex-grow">
+          {ad.adContent || "Check out this special feature from our partners."}
+        </p>
+        <div className="mt-auto">
+          {ad.adUrl && (
+              <a 
+              href={ad.adUrl} 
+              target="_blank" 
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 text-sm font-bold text-naija hover:underline"
+              >
+              Visit Website <ChevronRight className="w-4 h-4" />
+              </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdvertisePage({ onBack, onSubmitAd }: any) {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentStep, setPaymentStep] = useState<'info' | 'form'>('info'); // 'info' or 'form'
   const [selectedPlan, setSelectedPlan] = useState<Advertisement['plan'] | null>(null);
@@ -768,98 +379,91 @@ const AdvertisePage: React.FC<{
         ))}
       </div>
 
-      {/* Payment Modal */}
+      {/* Payment Modal - SMALL & COMPACT */}
       {showPaymentModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl w-full max-w-sm max-h-[80vh] overflow-y-auto p-5 relative shadow-2xl border border-gray-200 dark:border-gray-700">
-            <button 
-              onClick={() => setShowPaymentModal(false)}
-              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
-            >
-              <X className="w-5 h-5" />
-            </button>
+          <div className="bg-white dark:bg-gray-900 rounded-xl w-full max-w-sm max-h-[80vh] overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col">
+            <div className="p-3 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800 shrink-0">
+               <h3 className="font-bold text-sm dark:text-white">{paymentStep === 'info' ? 'Payment Details' : 'Submit Ad'}</h3>
+               <button onClick={() => setShowPaymentModal(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+            </div>
             
-            {/* STEP 1: PAYMENT INFORMATION */}
-            {paymentStep === 'info' && (
-                <div className="text-center">
-                    <div className="flex justify-center mb-4">
-                        <div className="bg-green-100 p-3 rounded-full">
-                            <CreditCard className="w-8 h-8 text-naija" />
+            <div className="p-5 overflow-y-auto">
+                {/* STEP 1: PAYMENT INFORMATION */}
+                {paymentStep === 'info' && (
+                    <div className="text-center">
+                        <div className="flex justify-center mb-3">
+                            <div className="bg-green-100 p-2 rounded-full">
+                                <CreditCard className="w-6 h-6 text-naija" />
+                            </div>
                         </div>
-                    </div>
-                    <h3 className="text-xl font-bold mb-2 dark:text-white">Payment Details</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">Please make a transfer of <span className="font-bold">₦{plans.find(p => p.name === selectedPlan)?.price.toLocaleString()}</span> to the account below.</p>
-                    
-                    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 mb-6 space-y-3">
-                        <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-2">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">Bank Name</span>
-                            <span className="font-bold text-sm text-gray-900 dark:text-white">Polaris Bank</span>
+                        <p className="text-xs text-gray-600 dark:text-gray-300 mb-4">Transfer <span className="font-bold">₦{plans.find(p => p.name === selectedPlan)?.price.toLocaleString()}</span> to:</p>
+                        
+                        <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 mb-4 space-y-2">
+                            <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-1">
+                                <span className="text-[10px] uppercase text-gray-500 dark:text-gray-400">Bank</span>
+                                <span className="font-bold text-xs text-gray-900 dark:text-white">Polaris Bank</span>
+                            </div>
+                            <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-1">
+                                <span className="text-[10px] uppercase text-gray-500 dark:text-gray-400">Account</span>
+                                <span className="font-bold text-xs text-gray-900 dark:text-white">Clean Connect</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-[10px] uppercase text-gray-500 dark:text-gray-400">Number</span>
+                                <span className="font-mono font-bold text-sm text-naija">4092144856</span>
+                            </div>
                         </div>
-                        <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-2">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">Account Name</span>
-                            <span className="font-bold text-sm text-gray-900 dark:text-white">Clean Connect</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">Account Number</span>
-                            <span className="font-mono font-bold text-lg text-naija">4092144856</span>
-                        </div>
-                    </div>
 
-                    <button 
-                        onClick={() => setPaymentStep('form')}
-                        className="w-full bg-naija text-white py-3 rounded-lg font-bold text-sm hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-                    >
-                        I Have Made Payment <ArrowRight className="w-4 h-4" />
-                    </button>
-                </div>
-            )}
+                        <button 
+                            onClick={() => setPaymentStep('form')}
+                            className="w-full bg-naija text-white py-2.5 rounded-lg font-bold text-xs hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                        >
+                            I Have Made Payment <ArrowRight className="w-3 h-3" />
+                        </button>
+                    </div>
+                )}
 
-            {/* STEP 2: SUBMISSION FORM */}
-            {paymentStep === 'form' && (
-                <>
-                    <h3 className="text-xl font-bold mb-4 dark:text-white">Complete Ad Submission</h3>
+                {/* STEP 2: SUBMISSION FORM */}
+                {paymentStep === 'form' && (
                     <form onSubmit={handleSubmitProof} className="space-y-3">
-                    <div>
-                        <label className="block text-xs font-medium mb-1 dark:text-gray-300">Your Name / Business Name</label>
-                        <input required type="text" value={clientName} onChange={e => setClientName(e.target.value)} className="w-full p-2 text-sm border rounded dark:bg-gray-800 dark:border-gray-700 dark:text-white" />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium mb-1 dark:text-gray-300">Email Address</label>
-                        <input required type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 text-sm border rounded dark:bg-gray-800 dark:border-gray-700 dark:text-white" />
-                    </div>
-
-                    {selectedPlan === 'Sponsored Article' && (
-                        <>
                         <div>
-                            <label className="block text-xs font-medium mb-1 dark:text-gray-300">Article Headline</label>
-                            <input required type="text" value={adHeadline} onChange={e => setAdHeadline(e.target.value)} className="w-full p-2 text-sm border rounded dark:bg-gray-800 dark:border-gray-700 dark:text-white" placeholder="e.g. The Rise of Fintech" />
+                            <label className="block text-[10px] font-bold uppercase mb-1 dark:text-gray-400">Name / Business</label>
+                            <input required type="text" value={clientName} onChange={e => setClientName(e.target.value)} className="w-full p-2 text-xs border rounded dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:border-naija outline-none" />
                         </div>
                         <div>
-                            <label className="block text-xs font-medium mb-1 dark:text-gray-300">Article Content</label>
-                            <textarea required value={adContent} onChange={e => setAdContent(e.target.value)} className="w-full p-2 text-sm border rounded dark:bg-gray-800 dark:border-gray-700 dark:text-white h-24" placeholder="Paste your article text here..." />
+                            <label className="block text-[10px] font-bold uppercase mb-1 dark:text-gray-400">Email</label>
+                            <input required type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 text-xs border rounded dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:border-naija outline-none" />
                         </div>
-                        </>
-                    )}
 
-                    <div className="border-t pt-3 dark:border-gray-700">
-                        <p className="font-bold text-xs mb-2 dark:text-white">Upload Ad Creative</p>
-                        <label className="block text-xs font-medium mb-1 dark:text-gray-300">
-                        {selectedPlan === 'Sponsored Article' ? 'Article Header Image' : 'Ad Banner Image'}
-                        </label>
-                        <input required type="file" accept="image/*" onChange={handleAdImageChange} className="w-full text-xs dark:text-gray-300 mb-2" />
-                    </div>
+                        {selectedPlan === 'Sponsored Article' && (
+                            <>
+                            <div>
+                                <label className="block text-[10px] font-bold uppercase mb-1 dark:text-gray-400">Headline</label>
+                                <input required type="text" value={adHeadline} onChange={e => setAdHeadline(e.target.value)} className="w-full p-2 text-xs border rounded dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:border-naija outline-none" placeholder="Ad Title" />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-bold uppercase mb-1 dark:text-gray-400">Content</label>
+                                <textarea required value={adContent} onChange={e => setAdContent(e.target.value)} className="w-full p-2 text-xs border rounded dark:bg-gray-800 dark:border-gray-700 dark:text-white h-16 focus:border-naija outline-none resize-none" placeholder="Ad text..." />
+                            </div>
+                            </>
+                        )}
 
-                    <div className="border-t pt-3 dark:border-gray-700">
-                        <label className="block text-xs font-medium mb-1 dark:text-gray-300">Upload Proof of Payment (Screenshot/Receipt)</label>
-                        <input required type="file" accept="image/*" onChange={handleReceiptChange} className="w-full text-xs dark:text-gray-300" />
-                    </div>
+                        <div className="border-t pt-2 dark:border-gray-700">
+                            <p className="font-bold text-[10px] mb-1 dark:text-white uppercase">Ad Image</p>
+                            <input required type="file" accept="image/*" onChange={handleAdImageChange} className="w-full text-[10px] dark:text-gray-300" />
+                        </div>
 
-                    <button type="submit" className="w-full bg-naija text-white py-3 rounded-lg font-bold text-sm hover:bg-green-700 mt-2">
-                        Submit Proof & Creative
-                    </button>
+                        <div className="border-t pt-2 dark:border-gray-700">
+                            <label className="block text-[10px] font-bold uppercase mb-1 dark:text-gray-400">Payment Receipt</label>
+                            <input required type="file" accept="image/*" onChange={handleReceiptChange} className="w-full text-[10px] dark:text-gray-300" />
+                        </div>
+
+                        <button type="submit" className="w-full bg-naija text-white py-3 rounded-lg font-bold text-xs hover:bg-green-700 mt-2 shadow-sm">
+                            Submit Proof & Creative
+                        </button>
                     </form>
-                </>
-            )}
+                )}
+            </div>
           </div>
         </div>
       )}
@@ -867,7 +471,260 @@ const AdvertisePage: React.FC<{
   );
 };
 
-const StaffLoginPage: React.FC<{ onLogin: () => void; onBack: () => void }> = ({ onLogin, onBack }) => {
+function ArticleReader({ article, allArticles, onBack, onNavigateToArticle, isAdmin }: any) {
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentName, setCommentName] = useState('');
+  const [commentEmail, setCommentEmail] = useState('');
+  const [commentContent, setCommentContent] = useState('');
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  
+  const relatedArticles = allArticles
+    .filter((a:any) => a.category === article.category && a.id !== article.id)
+    .slice(0, 3);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [article.id]);
+
+  useEffect(() => {
+    fetch(`${API_URL}/articles/${article.id}/comments`)
+      .then(res => res.json())
+      .then(data => {
+          if(Array.isArray(data)) setComments(data);
+      })
+      .catch(err => console.error("Error fetching comments:", err));
+  }, [article.id]);
+
+  const handleSubmitComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentName.trim() || !commentContent.trim() || !commentEmail.trim()) return;
+
+    try {
+        const res = await fetch(`${API_URL}/comments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                articleId: article.id,
+                author: commentName,
+                email: commentEmail,
+                content: commentContent
+            })
+        });
+
+        if (res.ok) {
+            const newComment = await res.json();
+            setComments([newComment, ...comments]);
+            setCommentName('');
+            setCommentEmail('');
+            setCommentContent('');
+        }
+    } catch (err) {
+        console.error("Error posting comment", err);
+        alert("Failed to post comment");
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <button 
+        onClick={onBack}
+        className="flex items-center gap-2 text-gray-500 hover:text-naija mb-6 transition-colors"
+      >
+        <ChevronRight className="w-4 h-4 rotate-180" /> Back to News
+      </button>
+
+      <article className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden mb-8">
+        {/* IMAGE SECTION - CLEAN, NO TEXT */}
+        <div className="h-64 md:h-[500px] w-full relative">
+          <img 
+            src={article.image || 'https://via.placeholder.com/800'} 
+            alt={article.title}
+            className="w-full h-full object-cover object-center"
+          />
+        </div>
+
+        <div className="p-8">
+          {/* TITLE & METADATA SECTION - BELOW IMAGE */}
+          <div className="mb-8">
+              <div className="mb-4">
+                  <span className="bg-naija text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                      {article.category}
+                  </span>
+              </div>
+              <h1 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 dark:text-white leading-tight mb-4">
+                  {article.title}
+              </h1>
+              {article.subHeadline && (
+                  <p className="text-xl text-gray-600 dark:text-gray-300 font-medium leading-relaxed border-l-4 border-naija pl-4">
+                      {article.subHeadline}
+                  </p>
+              )}
+          </div>
+
+          <div className="flex items-center justify-between py-6 border-y border-gray-100 dark:border-gray-700 mb-8 relative">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                <User className="w-6 h-6 text-gray-400" />
+              </div>
+              <div>
+                <p className="font-bold text-gray-900 dark:text-white">{article.author}</p>
+                <p className="text-sm text-gray-500">{article.date}</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <div className="relative">
+                  <button 
+                      onClick={() => setShowShareMenu(!showShareMenu)}
+                      className="p-2 text-gray-400 hover:text-naija transition-colors"
+                      title="Share this article"
+                  >
+                      <Share2 className="w-5 h-5" />
+                  </button>
+                  {showShareMenu && (
+                      <div className="absolute right-0 top-10 bg-white dark:bg-gray-700 shadow-xl rounded-lg p-2 flex flex-col gap-2 min-w-[150px] z-20 border border-gray-100 dark:border-gray-600">
+                           <button onClick={() => handleSocialShare('whatsapp', article.title)} className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-sm text-left dark:text-white">
+                              <MessageSquare className="w-4 h-4 text-green-500" /> WhatsApp
+                           </button>
+                           <button onClick={() => handleSocialShare('facebook', article.title)} className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-sm text-left dark:text-white">
+                              <Facebook className="w-4 h-4 text-blue-600" /> Facebook
+                           </button>
+                           <button onClick={() => handleSocialShare('twitter', article.title)} className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-sm text-left dark:text-white">
+                              <Twitter className="w-4 h-4 text-sky-400" /> Twitter
+                           </button>
+                           <button onClick={() => handleSocialShare('linkedin', article.title)} className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-sm text-left dark:text-white">
+                              <Linkedin className="w-4 h-4 text-blue-700" /> LinkedIn
+                           </button>
+                      </div>
+                  )}
+              </div>
+              <button className="p-2 text-gray-400 hover:text-naija transition-colors">
+                <Bookmark className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* CONTENT - FULLY JUSTIFIED TEXT */}
+          <div className="prose dark:prose-invert max-w-none">
+            <div className="text-gray-800 dark:text-gray-200 leading-loose space-y-4 text-lg">
+              {article.content.split('\n').map((paragraph, idx) => (
+                <p key={idx} className="text-justify">{paragraph}</p> 
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* RELATED ARTICLES */}
+        {relatedArticles.length > 0 && (
+            <div className="p-8 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">You might also like</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {relatedArticles.map((rel:any) => (
+                        <div 
+                            key={rel.id} 
+                            onClick={() => onNavigateToArticle(rel)}
+                            className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm hover:shadow-md cursor-pointer transition-all flex flex-col"
+                        >
+                            <div className="h-32 w-full overflow-hidden flex-shrink-0">
+                                <img src={rel.image} alt={rel.title} className="w-full h-full object-cover object-center" />
+                            </div>
+                            <div className="p-4 flex flex-col flex-grow">
+                                <span className="text-xs text-naija font-bold uppercase mb-1">{rel.category}</span>
+                                <h4 className="font-bold text-sm text-gray-900 dark:text-white leading-tight line-clamp-2 flex-grow">{rel.title}</h4>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )}
+
+        {/* Advertisement */}
+        <div className="bg-white dark:bg-gray-800 p-8 text-center border-t border-gray-100 dark:border-gray-700">
+          <p className="text-sm text-gray-400 uppercase tracking-widest mb-2">Advertisement</p>
+          <div className="h-32 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+            <span className="text-gray-400 font-medium">Place your ad here</span>
+          </div>
+        </div>
+
+        {/* Comments */}
+        <div className="p-8 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-naija" />
+            Comments ({comments.length})
+          </h3>
+
+          <form onSubmit={handleSubmitComment} className="mb-8 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  required
+                  value={commentName}
+                  onChange={(e) => setCommentName(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent dark:text-white focus:ring-2 focus:ring-naija focus:border-transparent outline-none transition-all"
+                  placeholder="Your name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email <span className="text-red-500">*</span></label>
+                <input
+                  type="email"
+                  required
+                  value={commentEmail}
+                  onChange={(e) => setCommentEmail(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent dark:text-white focus:ring-2 focus:ring-naija focus:border-transparent outline-none transition-all"
+                  placeholder="john@example.com"
+                />
+                <p className="text-xs text-gray-500 mt-1">Your email will not be published.</p>
+              </div>
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Comment <span className="text-red-500">*</span></label>
+              <textarea
+                required
+                value={commentContent}
+                onChange={(e) => setCommentContent(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent dark:text-white focus:ring-2 focus:ring-naija focus:border-transparent outline-none transition-all h-24 resize-none"
+                placeholder="Share your thoughts..."
+              ></textarea>
+            </div>
+            <button 
+              type="submit"
+              className="bg-naija hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+            >
+              <Send className="w-4 h-4" /> Post Comment
+            </button>
+          </form>
+
+          <div className="space-y-4">
+            {comments.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">Be the first to comment!</p>
+            ) : (
+              comments.map(comment => (
+                <div key={comment.id} className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-naija/10 rounded-full flex items-center justify-center text-naija font-bold text-xs">
+                        {comment.author.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-sm text-gray-900 dark:text-white">{comment.author}</h4>
+                        <span className="text-xs text-gray-500">{new Date(comment.date).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-gray-700 dark:text-gray-300 text-sm pl-11">{comment.content}</p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </article>
+    </div>
+  );
+}
+
+function StaffLoginPage({ onLogin, onBack }: any) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -881,57 +738,23 @@ const StaffLoginPage: React.FC<{ onLogin: () => void; onBack: () => void }> = ({
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl max-w-md w-full">
-        <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 bg-gray-900 dark:bg-white rounded-full flex items-center justify-center text-white dark:text-gray-900">
-            <Lock className="w-8 h-8" />
-          </div>
-        </div>
-        <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-2">Staff Access</h2>
-        <p className="text-center text-gray-500 mb-8">Enter your secure access code</p>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent dark:text-white focus:ring-2 focus:ring-naija outline-none"
-              placeholder="Access Code"
-              autoFocus
-            />
-          </div>
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-          <button type="submit" className="w-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold py-3 rounded-lg">
-            Enter Dashboard
-          </button>
-          <button type="button" onClick={onBack} className="w-full text-gray-500 text-sm py-2">
-            Return to Home
-          </button>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+      <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-sm text-center">
+        <Lock className="w-10 h-10 mx-auto mb-4 text-gray-700 dark:text-white" />
+        <h2 className="text-xl font-bold mb-6 dark:text-white">Staff Login</h2>
+        <form onSubmit={handleSubmit}>
+            <input autoFocus type="password" placeholder="Access Code" value={password} onChange={e=>setPassword(e.target.value)} className="w-full p-3 border rounded mb-4 dark:bg-gray-700 dark:text-white" />
+            <button className="w-full bg-black text-white py-3 rounded font-bold mb-2">Login</button>
+            <button type="button" onClick={onBack} className="text-sm text-gray-500">Back Home</button>
         </form>
       </div>
     </div>
   );
-};
+}
 
-const AdminDashboard: React.FC<{
-  articles: Article[];
-  pendingArticles: Article[];
-  ads: Advertisement[];
-  onPublish: (article: Article) => void;
-  onUpdate: (id: string, article: Article) => void;
-  onDelete: (id: string) => void;
-  onApproveSubmission: (article: Article) => void;
-  onRejectSubmission: (id: string) => void;
-  onApproveAd: (id: string) => void;
-  onRejectAd: (id: string) => void;
-  onLogout: () => void;
-}> = ({ articles, pendingArticles, ads, onPublish, onUpdate, onDelete, onApproveSubmission, onRejectSubmission, onApproveAd, onRejectAd, onLogout }) => {
+function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, onDelete, onApproveSubmission, onRejectSubmission, onApproveAd, onRejectAd, onLogout }: any) {
   const [activeTab, setActiveTab] = useState<'live' | 'pending' | 'compose' | 'ads'>('live');
-  
-  // Compose/Edit State
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string|null>(null);
   const [title, setTitle] = useState('');
   const [subHeadline, setSubHeadline] = useState('');
   const [category, setCategory] = useState('Politics');
@@ -942,17 +765,12 @@ const AdminDashboard: React.FC<{
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isBreaking, setIsBreaking] = useState(false);
   const [lastPublishedTitle, setLastPublishedTitle] = useState<string | null>(null);
-
   const [viewAdId, setViewAdId] = useState<string | null>(null);
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setImageFile(file);
-      try {
-        const base64 = await readFileAsDataURL(file);
-        setImagePreview(base64);
-      } catch (err) { console.error(err); }
+      setImageFile(e.target.files[0]);
+      try { setImagePreview(await readFileAsDataURL(e.target.files[0])); } catch(err) { console.error(err); }
     }
   };
 
@@ -976,20 +794,10 @@ const AdminDashboard: React.FC<{
 
   const handlePublishOrUpdate = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Determine author logic
     const finalAuthor = showAuthor ? authorName : "The Platform";
-
     const article: any = {
-      title,
-      subHeadline,
-      category,
-      author: finalAuthor,
-      image: imagePreview || 'https://via.placeholder.com/800x400',
-      excerpt: content.substring(0, 100) + '...',
-      content,
-      isBreaking,
-      status: 'published' // FORCE STATUS TO PUBLISHED
+      title, subHeadline, category, author: finalAuthor, image: imagePreview || 'https://via.placeholder.com/800x400',
+      excerpt: content.substring(0, 100) + '...', content, isBreaking, status: 'published'
     };
 
     if (editingId) {
@@ -1001,245 +809,97 @@ const AdminDashboard: React.FC<{
       setLastPublishedTitle(article.title);
     }
     
-    // Reset Form
-    setTitle('');
-    setSubHeadline('');
-    setContent('');
-    setImagePreview('');
-    setIsBreaking(false);
+    setTitle(''); setSubHeadline(''); setContent(''); setImagePreview(''); setIsBreaking(false);
     if(editingId) setActiveTab('live');
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-      <div className="bg-white dark:bg-gray-800 shadow-sm px-6 py-4 flex justify-between items-center sticky top-0 z-10">
-        <div className="flex items-center gap-2 text-gray-900 dark:text-white font-bold text-xl">
-          <Shield className="w-6 h-6 text-naija" /> Editorial Dashboard
-        </div>
-        <button onClick={onLogout} className="text-red-500 font-medium text-sm">Log Out</button>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="bg-white dark:bg-gray-800 p-4 shadow flex justify-between items-center sticky top-0 z-20">
+        <span className="font-bold flex items-center gap-2 dark:text-white"><Shield className="w-5 h-5"/> Editorial</span>
+        <button onClick={onLogout} className="text-red-500 text-sm font-bold">Logout</button>
       </div>
-
-      <div className="max-w-6xl mx-auto p-6">
-        <div className="flex gap-4 mb-6 overflow-x-auto">
-          <button 
-            onClick={() => setActiveTab('live')} 
-            className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap ${activeTab === 'live' ? 'bg-gray-900 text-white' : 'bg-white text-gray-600'}`}
-          >
-            Live Articles ({articles.length})
-          </button>
-          <button 
-            onClick={() => setActiveTab('pending')} 
-            className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap ${activeTab === 'pending' ? 'bg-gray-900 text-white' : 'bg-white text-gray-600'}`}
-          >
-            Pending Reviews ({pendingArticles.length})
-          </button>
-          <button 
-            onClick={() => setActiveTab('ads')} 
-            className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap ${activeTab === 'ads' ? 'bg-gray-900 text-white' : 'bg-white text-gray-600'}`}
-          >
-            Ad Requests ({ads.filter(a => a.status === 'Pending').length})
-          </button>
-          <button 
-            onClick={() => {
-                setActiveTab('compose');
-                setEditingId(null);
-                setTitle('');
-                setSubHeadline('');
-                setContent('');
-                setImagePreview('');
-                setLastPublishedTitle(null);
-            }} 
-            className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap ${activeTab === 'compose' ? 'bg-gray-900 text-white' : 'bg-white text-gray-600'}`}
-          >
-            {editingId ? 'Edit Article' : 'Compose New'}
-          </button>
+      
+      <div className="p-4 max-w-5xl mx-auto">
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+            {['live','pending','ads','compose'].map(t => (
+                <button key={t} onClick={()=>setActiveTab(t as any)} className={`px-4 py-2 rounded-full text-xs font-bold uppercase ${activeTab===t ? 'bg-black text-white' : 'bg-white text-gray-600 border'}`}>
+                    {t} {t==='pending' && `(${pendingArticles.length})`} {t==='ads' && `(${ads.filter((a:any)=>a.status==='Pending').length})`}
+                </button>
+            ))}
         </div>
 
         {activeTab === 'live' && (
-          <div className="grid gap-4">
-            {articles.map(article => (
-              <div key={article.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm flex justify-between items-center">
-                <div className="flex gap-4">
-                    <img src={article.image} className="w-16 h-16 object-cover rounded" />
-                    <div>
-                      <h3 className="font-bold dark:text-white">{article.title}</h3>
-                      <span className="text-xs text-gray-500">{article.category} • {article.date}</span>
+            <div className="space-y-3">
+                {articles.map((a:any) => (
+                    <div key={a.id} className="bg-white dark:bg-gray-800 p-3 rounded shadow flex justify-between items-center">
+                        <div className="flex gap-3 items-center">
+                            <img src={a.image} className="w-10 h-10 rounded object-cover" />
+                            <div><h4 className="font-bold text-sm dark:text-white line-clamp-1">{a.title}</h4><span className="text-xs text-gray-500">{a.date}</span></div>
+                        </div>
+                        <div className="flex gap-2">
+                            <button onClick={()=>handleEditClick(a)} className="text-blue-500 text-xs font-bold border px-2 py-1 rounded">Edit</button>
+                            <button onClick={()=>handleSafeDelete(a.id)} className="text-red-500 text-xs font-bold border px-2 py-1 rounded">Delete</button>
+                        </div>
                     </div>
-                </div>
-                <div className="flex gap-2">
-                    <button 
-                        onClick={() => handleEditClick(article)}
-                        className="text-blue-500 hover:bg-blue-50 p-2 rounded flex items-center gap-1 text-sm font-medium"
-                    >
-                        <PenTool className="w-4 h-4" /> Edit
-                    </button>
-                    <button 
-                        onClick={() => handleSafeDelete(article.id)} 
-                        className="text-red-500 hover:bg-red-50 p-2 rounded"
-                    >
-                        <Trash2 className="w-5 h-5" />
-                    </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Pending Articles, Ads tabs remain same */}
-        {activeTab === 'pending' && (
-          <div className="grid gap-4">
-            {pendingArticles.length === 0 ? <p className="text-gray-500">No pending submissions.</p> : 
-             pendingArticles.map(article => (
-              <div key={article.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
-                <h3 className="font-bold text-lg dark:text-white mb-2">{article.title}</h3>
-                <div className="flex gap-2 mb-4 text-xs">
-                   <span className="bg-gray-100 px-2 py-1 rounded">{article.category}</span>
-                   <span className="text-gray-500">By {article.author}</span>
-                </div>
-                <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">{article.excerpt}</p>
-                <div className="flex gap-3">
-                  <button onClick={() => onApproveSubmission(article)} className="bg-green-600 text-white px-4 py-2 rounded text-sm">Approve & Publish</button>
-                  <button onClick={() => onRejectSubmission(article.id)} className="bg-red-500 text-white px-4 py-2 rounded text-sm">Reject</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {activeTab === 'ads' && (
-          <div className="grid gap-4">
-            {ads.filter(ad => ad.status === 'Pending').length === 0 ? <p className="text-gray-500">No pending ad requests.</p> :
-             ads.filter(ad => ad.status === 'Pending').map(ad => (
-               <div key={ad.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border-l-4 border-yellow-500">
-                 <div className="flex justify-between mb-4">
-                   <div>
-                     <h3 className="font-bold text-lg dark:text-white">{ad.plan}</h3>
-                     <p className="text-sm text-gray-500">Client: {ad.clientName} ({ad.email})</p>
-                     <p className="font-mono font-bold text-naija mt-1">₦{ad.amount.toLocaleString()}</p>
-                   </div>
-                   <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs h-fit">Review Needed</span>
-                 </div>
-                 
-                 <div className="grid grid-cols-2 gap-4 mb-4">
-                   <div>
-                      <p className="text-xs font-bold mb-1">Proof of Payment</p>
-                      <img src={ad.receiptImage} className="w-full h-32 object-cover rounded border cursor-pointer" onClick={() => setViewAdId(ad.id)} />
-                   </div>
-                   <div>
-                      <p className="text-xs font-bold mb-1">Ad Creative</p>
-                      <img src={ad.adImage || 'https://via.placeholder.com/150'} className="w-full h-32 object-cover rounded border" />
-                   </div>
-                 </div>
-                 
-                 {ad.adContent && (
-                   <div className="mb-4 bg-gray-50 p-3 rounded text-sm">
-                     <p className="font-bold">Content Preview:</p>
-                     <p className="line-clamp-2">{ad.adContent}</p>
-                   </div>
-                 )}
-
-                 <div className="flex gap-3">
-                   <button onClick={() => onApproveAd(ad.id)} className="bg-green-600 text-white px-4 py-2 rounded text-sm flex-1">Verify & Approve</button>
-                   <button onClick={() => onRejectAd(ad.id)} className="bg-red-500 text-white px-4 py-2 rounded text-sm flex-1">Reject</button>
-                 </div>
-               </div>
-             ))}
-          </div>
+                ))}
+            </div>
         )}
 
         {activeTab === 'compose' && (
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
-            {lastPublishedTitle ? (
-                 <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center mb-6">
-                     <div className="flex justify-center mb-2"><CheckCircle className="w-12 h-12 text-green-500" /></div>
-                     <h3 className="text-xl font-bold text-green-800 mb-2">Article Published Successfully!</h3>
-                     <p className="text-green-700 mb-4">"{lastPublishedTitle}" is now live.</p>
-                     
-                     <div className="flex flex-col md:flex-row items-center justify-center gap-4">
-                         <span className="text-sm font-bold text-gray-600">Share to Official Channels:</span>
-                         <button onClick={() => handleSocialShare('facebook', lastPublishedTitle)} className="flex items-center gap-2 px-4 py-2 bg-[#1877F2] text-white rounded hover:opacity-90"><Facebook className="w-4 h-4" /> Facebook</button>
-                         <button onClick={() => handleSocialShare('twitter', lastPublishedTitle)} className="flex items-center gap-2 px-4 py-2 bg-[#1DA1F2] text-white rounded hover:opacity-90"><Twitter className="w-4 h-4" /> Twitter</button>
-                     </div>
-                     <button onClick={() => setLastPublishedTitle(null)} className="mt-6 text-sm text-gray-500 underline">Write another article</button>
-                 </div>
-            ) : (
-                <>
-                    <h3 className="text-xl font-bold mb-4 dark:text-white">{editingId ? 'Edit Article' : 'Compose New Article'}</h3>
-                    <form onSubmit={handlePublishOrUpdate} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-bold mb-1 dark:text-white">Main Headline</label>
-                            <input value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white" required />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold mb-1 dark:text-white">Sub-Headline</label>
-                            <input value={subHeadline} onChange={e => setSubHeadline(e.target.value)} className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white" placeholder="Optional" />
+            <div className="bg-white dark:bg-gray-800 p-6 rounded shadow">
+                <h3 className="font-bold mb-4 dark:text-white">{editingId ? 'Edit Article' : 'Compose New'}</h3>
+                <form onSubmit={handlePublishOrUpdate} className="space-y-4">
+                    <input required placeholder="Headline" value={title} onChange={e=>setTitle(e.target.value)} className="w-full border p-2 rounded text-sm" />
+                    <input placeholder="Sub-Headline" value={subHeadline} onChange={e=>setSubHeadline(e.target.value)} className="w-full border p-2 rounded text-sm" />
+                    <div className="grid grid-cols-2 gap-4">
+                        <select value={category} onChange={e=>setCategory(e.target.value)} className="border p-2 rounded text-sm">
+                            {['Politics','Metro','Business','Technology','Sports','Entertainment','Education','Editorials'].map(c=><option key={c}>{c}</option>)}
+                        </select>
+                        <div className="flex items-center gap-2">
+                            <input type="checkbox" checked={showAuthor} onChange={e=>setShowAuthor(e.target.checked)} />
+                            <input value={authorName} onChange={e=>setAuthorName(e.target.value)} disabled={!showAuthor} className="border p-2 rounded text-sm w-full" />
                         </div>
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-bold mb-1 dark:text-white">Category</label>
-                            <select value={category} onChange={e => setCategory(e.target.value)} className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white">
-                            <option>Politics</option>
-                            <option>Metro</option>
-                            <option>Business</option>
-                            <option>Technology</option>
-                            <option>Sports</option>
-                            <option>Entertainment</option>
-                            <option>Education</option>
-                            <option>Editorials</option>
-                            </select>
-                        </div>
-                        <div>
-                            <div className="flex justify-between items-center mb-1">
-                                <label className="text-sm font-bold dark:text-white">Author Name</label>
-                                <div className="flex items-center gap-2">
-                                    <input 
-                                        type="checkbox" 
-                                        id="showAuthor" 
-                                        checked={showAuthor} 
-                                        onChange={e => setShowAuthor(e.target.checked)} 
-                                        className="w-4 h-4"
-                                    />
-                                    <label htmlFor="showAuthor" className="text-xs text-gray-500">Show on Article</label>
-                                </div>
-                            </div>
-                            <input 
-                                value={authorName} 
-                                onChange={e => setAuthorName(e.target.value)} 
-                                className={`w-full p-2 border rounded dark:bg-gray-700 dark:text-white ${!showAuthor ? 'opacity-50' : ''}`} 
-                                disabled={!showAuthor}
-                            />
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label className="block text-sm font-bold mb-1 dark:text-white">Feature Image</label>
-                        <input type="file" onChange={handleImageChange} className="w-full text-sm dark:text-white" />
-                        {imagePreview && <img src={imagePreview} className="h-20 mt-2 rounded" />}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-bold mb-1 dark:text-white">Article Content</label>
-                        <textarea value={content} onChange={e => setContent(e.target.value)} className="w-full p-2 border rounded h-64 dark:bg-gray-700 dark:text-white" required />
-                    </div>
-
+                    <input type="file" onChange={handleImageChange} className="text-xs" />
+                    <textarea required placeholder="Content" value={content} onChange={e=>setContent(e.target.value)} className="w-full border p-2 rounded h-40 text-sm" />
                     <div className="flex items-center gap-2">
-                        <input type="checkbox" checked={isBreaking} onChange={e => setIsBreaking(e.target.checked)} id="breaking" />
-                        <label htmlFor="breaking" className="text-sm font-bold text-red-600">Mark as Breaking News</label>
+                        <input type="checkbox" checked={isBreaking} onChange={e=>setIsBreaking(e.target.checked)} />
+                        <label className="text-red-600 font-bold text-sm">Breaking News</label>
                     </div>
-
-                    <button type="submit" className="bg-naija text-white px-6 py-3 rounded font-bold w-full hover:bg-green-700">
-                        {editingId ? 'Update Article' : 'Publish Live'}
-                    </button>
-                    </form>
-                </>
-            )}
-          </div>
+                    <button className="bg-green-600 text-white w-full py-3 rounded font-bold">{editingId ? 'Update' : 'Publish Live'}</button>
+                </form>
+            </div>
         )}
-      </div>
 
+        {/* Pending & Ads tabs kept simple for brevity but fully functional */}
+        {activeTab === 'pending' && pendingArticles.map((a:any) => (
+            <div key={a.id} className="bg-white p-4 rounded shadow mb-2">
+                <h4 className="font-bold">{a.title}</h4>
+                <div className="flex gap-2 mt-2">
+                    <button onClick={()=>onApproveSubmission(a)} className="bg-green-500 text-white px-3 py-1 rounded text-xs">Approve</button>
+                    <button onClick={()=>onRejectSubmission(a.id)} className="bg-red-500 text-white px-3 py-1 rounded text-xs">Reject</button>
+                </div>
+            </div>
+        ))}
+
+        {activeTab === 'ads' && ads.filter((a:any)=>a.status==='Pending').map((a:any) => (
+            <div key={a.id} className="bg-white p-4 rounded shadow mb-2 border-l-4 border-yellow-400">
+                <div className="flex justify-between">
+                    <h4 className="font-bold">{a.plan}</h4>
+                    <span className="text-green-600 font-mono font-bold">₦{a.amount.toLocaleString()}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 my-2">
+                    <img src={a.receiptImage} className="h-20 object-cover border" onClick={() => setViewAdId(a.id)} />
+                    <img src={a.adImage} className="h-20 object-cover border" />
+                </div>
+                <div className="flex gap-2">
+                    <button onClick={()=>onApproveAd(a.id)} className="bg-green-500 text-white px-3 py-1 rounded text-xs flex-1">Approve</button>
+                    <button onClick={()=>onRejectAd(a.id)} className="bg-red-500 text-white px-3 py-1 rounded text-xs flex-1">Reject</button>
+                </div>
+            </div>
+        ))}
+      </div>
       {viewAdId && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-8" onClick={() => setViewAdId(null)}>
            <img src={ads.find(a => a.id === viewAdId)?.receiptImage} className="max-h-full max-w-full" />
@@ -1247,11 +907,217 @@ const AdminDashboard: React.FC<{
       )}
     </div>
   );
-};
+}
+
+function SubmitNewsPage({ onBack, onSubmit }: any) {
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('Politics');
+  const [content, setContent] = useState('');
+  const [imagePreview, setImagePreview] = useState('');
+  
+  const submit = (e: any) => {
+    e.preventDefault();
+    onSubmit({ title, category, content, image: imagePreview, author: 'Citizen Reporter' });
+  };
+
+  const handleFile = async (e: any) => {
+    if(e.target.files?.[0]) setImagePreview(await readFileAsDataURL(e.target.files[0]));
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-8">
+      <button onClick={onBack} className="mb-6 flex items-center text-gray-500 text-sm"><ChevronRight className="w-4 h-4 rotate-180"/> Back</button>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
+        <h2 className="text-2xl font-bold mb-6 dark:text-white">Submit Story</h2>
+        <form onSubmit={submit} className="space-y-4">
+            <input required placeholder="Headline" value={title} onChange={e=>setTitle(e.target.value)} className="w-full border p-3 rounded" />
+            <select value={category} onChange={e=>setCategory(e.target.value)} className="w-full border p-3 rounded">
+                {['Politics','Metro','Business','Technology','Sports','Entertainment','Education','Editorials'].map(c=><option key={c}>{c}</option>)}
+            </select>
+            <input type="file" onChange={handleFile} className="text-sm" />
+            <textarea required placeholder="Content" value={content} onChange={e=>setContent(e.target.value)} className="w-full border p-3 rounded h-40" />
+            <button className="bg-naija text-white w-full py-3 rounded font-bold">Submit for Review</button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// --- Main App Component ---
+function App() {
+  const [view, setView] = useState('home');
+  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [pending, setPending] = useState<Article[]>([]);
+  const [ads, setAds] = useState<Advertisement[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+  const [cat, setCat] = useState('All');
+  const [loading, setLoading] = useState(true);
+
+  // Initial Load
+  useEffect(() => {
+    const link = document.createElement('link'); link.rel='icon'; 
+    link.href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23008753' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><line x1='2' y1='12' x2='22' y2='12'></line><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'></path></svg>";
+    document.head.appendChild(link);
+    document.title = "The Platform";
+
+    const loadData = async () => {
+        try {
+            const [news, activeAds] = await Promise.all([fetch(`${API_URL}/articles`).then(r=>r.json()), fetch(`${API_URL}/ads/active`).then(r=>r.json())]);
+            if(Array.isArray(news)) setArticles(news.map(mapArticleFromDB));
+            if(Array.isArray(activeAds)) setAds(activeAds);
+        } catch(e) { console.error(e); } finally { setLoading(false); }
+    };
+    loadData();
+  }, []);
+
+  const toggleTheme = () => { setIsDark(!isDark); document.documentElement.classList.toggle('dark'); };
+
+  // Data Handlers
+  const handleAdminLogin = async () => {
+    setIsAdmin(true);
+    const res = await fetch(`${API_URL}/admin/pending-articles`);
+    const data = await res.json();
+    if(Array.isArray(data)) setPending(data.map(mapArticleFromDB));
+    setView('admin');
+  };
+
+  const publishNews = async (data: Article) => {
+    const res = await fetch(`${API_URL}/articles`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+    if(res.ok) {
+        const saved = await res.json();
+        const mapped = mapArticleFromDB(saved);
+        if(mapped.status === 'published') { setArticles([mapped, ...articles]); alert('Published Live!'); }
+        else alert('Submitted for Review');
+        setView('home');
+    }
+  };
+
+  const updateNews = async (id: string, data: Article) => {
+    const res = await fetch(`${API_URL}/articles/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+    if(res.ok) {
+        const updated = mapArticleFromDB(await res.json());
+        setArticles(articles.map(a => a.id === id ? updated : a));
+    }
+  };
+
+  const deleteNews = async (id: string) => {
+    if(await fetch(`${API_URL}/articles/${id}`, {method:'DELETE'}).then(r=>r.ok)) {
+        setArticles(articles.filter(a => a.id !== id));
+    }
+  };
+
+  const submitAd = async (data: Advertisement) => {
+    const res = await fetch(`${API_URL}/ads`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+    if(res.ok) { alert('Ad Submitted!'); setView('home'); }
+  };
+
+  // Admin Approvals
+  const approveArticle = async (a: Article) => {
+    const res = await fetch(`${API_URL}/admin/articles/${a.id}/approve`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({isBreaking:false})});
+    if(res.ok) {
+        const approved = mapArticleFromDB(await res.json());
+        setArticles([approved, ...articles]);
+        setPending(pending.filter(p=>p.id!==a.id));
+    }
+  };
+
+  const approveAd = async (id: string) => {
+    const res = await fetch(`${API_URL}/admin/ads/${id}/approve`, {method:'PATCH'});
+    if(res.ok) setAds([...ads, await res.json()]);
+  };
+
+  // Rendering
+  if(loading) return <div className="min-h-screen flex items-center justify-center"><RefreshCw className="animate-spin text-green-600"/></div>;
+  if(view === 'login') return <StaffLoginPage onLogin={handleAdminLogin} onBack={()=>setView('home')}/>;
+  if(view === 'admin' && isAdmin) return <AdminDashboard articles={articles} pendingArticles={pending} ads={ads} onPublish={publishNews} onUpdate={updateNews} onDelete={deleteNews} onApproveSubmission={approveArticle} onRejectSubmission={(id:string)=>setPending(pending.filter(a=>a.id!==id))} onApproveAd={approveAd} onRejectAd={(id:string)=>setAds(ads.filter(a=>a.id!==id))} onLogout={()=>{setIsAdmin(false); setView('home');}} />;
+
+  const filtered = cat === 'All' ? articles : articles.filter(a => a.category === cat);
+  const activeAds = ads.filter(a=>a.status==='Active' || a.status==='active');
+  const feed = [...filtered];
+  // Inject Ads
+  activeAds.filter(a=>a.plan==='Sponsored Article').forEach((ad, i) => {
+    const idx = (i+1)*3;
+    if(idx < feed.length) feed.splice(idx, 0, {isAd:true, data:ad});
+  });
+
+  return (
+    <div className={`min-h-screen flex flex-col ${isDark ? 'dark' : ''}`}>
+      <Header onNavigate={setView} toggleTheme={toggleTheme} isDark={isDark} activeAd={activeAds.find(a=>a.plan==='Header Leaderboard')} />
+      <main className="flex-grow">
+        {view === 'home' && (
+            <div className="max-w-7xl mx-auto px-4 py-6">
+                <div className="flex gap-2 overflow-x-auto pb-4 mb-4 scrollbar-hide">
+                    {['All','Politics','Metro','Business','Technology','Sports','Entertainment','Education','Editorials'].map(c => (
+                        <button key={c} onClick={()=>setCat(c)} className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap ${cat===c ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'}`}>{c}</button>
+                    ))}
+                </div>
+
+                {filtered.length > 0 && (
+                    <div className="mb-12 grid lg:grid-cols-3 gap-8">
+                        {/* HERO */}
+                        <div className="lg:col-span-2 cursor-pointer group" onClick={()=> {setSelectedArticle(filtered[0]); setView('article');}}>
+                            <div className="relative h-[400px] rounded-xl overflow-hidden mb-4">
+                                <img src={filtered[0].image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                                {filtered[0].isBreaking && <span className="absolute top-4 left-4 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse">Breaking News</span>}
+                            </div>
+                            <span className="bg-naija text-white text-xs font-bold px-2 py-1 rounded uppercase">{filtered[0].category}</span>
+                            <h2 className="text-3xl font-serif font-bold mt-2 mb-2 dark:text-white">{filtered[0].title}</h2>
+                            <p className="text-gray-600 dark:text-gray-400 line-clamp-2">{filtered[0].subHeadline || filtered[0].excerpt}</p>
+                        </div>
+                        {/* SIDEBAR */}
+                        <div className="space-y-6">
+                            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border dark:border-gray-700">
+                                <h3 className="font-bold mb-4 dark:text-white flex items-center gap-2"><TrendingUp className="w-4 h-4 text-naija"/> Trending</h3>
+                                <div className="space-y-4">
+                                    {articles.slice(1,4).map((a,i) => (
+                                        <div key={a.id} onClick={()=>{setSelectedArticle(a); setView('article');}} className="flex gap-3 cursor-pointer group">
+                                            <span className="text-2xl font-bold text-gray-300">0{i+1}</span>
+                                            <div><h4 className="font-bold text-sm dark:text-white line-clamp-2 group-hover:text-naija">{a.title}</h4></div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            {/* SIDE AD */}
+                            {activeAds.find(a=>a.plan==='Sidebar Banner') ? (
+                                <a href={activeAds.find(a=>a.plan==='Sidebar Banner')?.adUrl||'#'} target="_blank" className="block h-64 bg-gray-100 rounded-xl overflow-hidden relative">
+                                    <img src={activeAds.find(a=>a.plan==='Sidebar Banner')?.adImage} className="w-full h-full object-cover" />
+                                    <span className="absolute bottom-1 right-1 bg-black/50 text-white text-[10px] px-1">Ad</span>
+                                </a>
+                            ) : (
+                                <div className="h-64 bg-gray-50 border-2 border-dashed flex flex-col items-center justify-center text-center p-4 rounded-xl">
+                                    <span className="text-sm font-bold text-gray-400">Ad Space Available</span>
+                                    <button onClick={()=>setView('advertise')} className="text-xs text-naija mt-2 underline">Place Ad</button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                <h3 className="text-2xl font-serif font-bold mb-6 dark:text-white flex items-center gap-2"><LayoutGrid className="w-6 h-6"/> Latest Stories</h3>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {feed.slice(1).map((item: any) => item.isAd ? (
+                        <SponsoredArticleCard key={item.data.id} ad={item.data} />
+                    ) : (
+                        <ArticleCard key={item.id} article={item} onClick={()=>{setSelectedArticle(item); setView('article');}} />
+                    ))}
+                </div>
+            </div>
+        )}
+
+        {view === 'article' && selectedArticle && (
+            <ArticleReader article={selectedArticle} allArticles={articles} onBack={()=>setView('home')} onNavigateToArticle={(a:Article)=>{setSelectedArticle(a); window.scrollTo(0,0);}} isAdmin={isAdmin} />
+        )}
+        {view === 'submit' && <SubmitNewsPage onBack={()=>setView('home')} onSubmit={publishNews} />}
+        {view === 'advertise' && <AdvertisePage onBack={()=>setView('home')} onSubmitAd={submitAd} />}
+      </main>
+      <footer className="bg-white dark:bg-gray-800 border-t dark:border-gray-700 py-8 text-center text-sm text-gray-500">
+        &copy; 2024 The Platform. All rights reserved.
+      </footer>
+    </div>
+  );
+}
 
 const root = createRoot(document.getElementById('root')!);
-root.render(
-  <ErrorBoundary>
-    <App />
-  </ErrorBoundary>
-);
+root.render(<ErrorBoundary><App /></ErrorBoundary>);
