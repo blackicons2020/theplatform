@@ -6,7 +6,7 @@ import {
   TrendingUp, Shield, FileText, Users, DollarSign, 
   LayoutGrid, PenTool, Image as ImageIcon, Sun, Moon,
   CreditCard, Trash2, Lock, Globe, Facebook, Twitter, Instagram, Linkedin, Youtube,
-  Link as LinkIcon, ExternalLink, ArrowRight, RefreshCw, UploadCloud, MapPin, Mail, Phone
+  Link as LinkIcon, ExternalLink, ArrowRight, RefreshCw, UploadCloud, MapPin, Mail, Download
 } from 'lucide-react';
 
 // --- Configuration ---
@@ -15,33 +15,19 @@ const API_URL = "https://platform-backend-54nn.onrender.com/api";
 // ✅ LIVE FRONTEND URL (For sharing links)
 const APP_URL = window.location.origin; 
 
-// ✅ CENTRAL CATEGORIES LIST (Ensures consistency everywhere)
+// ✅ CENTRAL CATEGORIES LIST
 const CATEGORIES = [
   'Politics', 'Metro', 'Business', 'Technology', 'Sports', 
   'Entertainment', 'Education', 'Leadership', 'Editorials'
 ];
 
-// --- Error Boundary Component ---
+// --- Error Boundary ---
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
-  constructor(props: { children: ReactNode }) {
-    super(props);
-    this.state = { hasError: false };
-  }
+  constructor(props: { children: ReactNode }) { super(props); this.state = { hasError: false }; }
   static getDerivedStateFromError(_: Error) { return { hasError: true }; }
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) { console.error("Uncaught error:", error, errorInfo); }
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) { console.error("Error:", error, errorInfo); }
   render() {
-    if (this.state.hasError) {
-      return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-center p-4">
-          <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong.</h1>
-          <p className="text-gray-600 mb-6">We couldn't load the application correctly. Please refresh.</p>
-          <button onClick={() => window.location.reload()} className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors">
-            Reload Page
-          </button>
-        </div>
-      );
-    }
+    if (this.state.hasError) return <div className="p-4 text-center"><h1 className="text-xl font-bold">Something went wrong.</h1><button onClick={() => window.location.reload()} className="mt-4 bg-black text-white px-4 py-2 rounded">Reload</button></div>;
     return this.props.children;
   }
 }
@@ -50,8 +36,9 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 interface Article { id: string; title: string; subHeadline?: string; category: string; author: string; date: string; image: string; excerpt: string; content: string; views: string; isBreaking?: boolean; status?: string; }
 interface Advertisement { id: string; clientName: string; email: string; plan: string; amount: number; status: string; receiptImage: string; adImage?: string; adContent?: string; adContentFile?: string; adHeadline?: string; }
 interface Comment { id: string; author: string; email: string; content: string; date: string; }
+interface SupportMsg { id: string; name: string; email: string; subject: string; message: string; date: string; }
 
-// --- Utility Functions ---
+// --- Utils ---
 const mapArticleFromDB = (dbArticle: any): Article => ({
   ...dbArticle,
   subHeadline: dbArticle.sub_headline || '',
@@ -94,7 +81,7 @@ function Header({ onNavigate, toggleTheme, isDark, activeAd, onCategorySelect }:
       )}
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => onNavigate('home')}>
-          <div className="w-8 h-8 bg-naija rounded-full flex items-center justify-center text-white font-bold"><Globe className="w-5 h-5" /></div>
+          <div className="w-8 h-8 bg-naija rounded-full flex items-center justify-center text-white font-bold"><Globe className="w-5 h-5"/></div>
           <h1 className="font-sans text-lg font-bold text-gray-900 dark:text-white">The Platform</h1>
         </div>
         <div className="flex items-center gap-2">
@@ -149,10 +136,8 @@ function SponsoredArticleCard({ ad }: { ad: Advertisement }) {
 }
 
 function Footer({ onNavigate, onCategorySelect }: any) {
-  const currentYear = new Date().getFullYear();
-  
   return (
-    <footer className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white pt-12 pb-8 border-t border-gray-200 dark:border-gray-700 mt-auto">
+    <footer className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white pt-10 pb-6 border-t border-gray-200 dark:border-gray-700 mt-auto">
       <div className="max-w-7xl mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 border-b border-gray-100 dark:border-gray-700 pb-8">
           <div className="col-span-1">
@@ -160,141 +145,88 @@ function Footer({ onNavigate, onCategorySelect }: any) {
               <div className="w-8 h-8 bg-naija rounded-full flex items-center justify-center text-white font-bold"><Globe className="w-5 h-5"/></div>
               <h2 className="font-bold text-lg">The Platform</h2>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-              Empowering voices through unbiased reporting and community-driven journalism. We stand for truth, transparency, and the progress of our nation.
-            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Empowering voices through unbiased reporting and community-driven journalism.</p>
           </div>
-          
           <div>
-            <h3 className="font-bold mb-4 text-sm uppercase tracking-wider">News Categories</h3>
+            <h3 className="font-bold mb-4 text-sm">News</h3>
             <ul className="space-y-2 text-xs text-gray-500 dark:text-gray-400">
-              {CATEGORIES.map((cat) => (
-                <li 
-                    key={cat} 
-                    className="hover:text-naija cursor-pointer transition-colors flex items-center gap-1"
-                    onClick={() => { 
-                        onNavigate('home'); 
-                        onCategorySelect(cat); 
-                        window.scrollTo(0,0);
-                    }}
-                >
-                   <ChevronRight className="w-3 h-3" /> {cat}
-                </li>
-              ))}
+              {/* UPDATED: Shows ALL categories now */}
+              {CATEGORIES.map(c=><li key={c} className="hover:text-naija cursor-pointer" onClick={()=>{onNavigate('home'); onCategorySelect(c); window.scrollTo(0,0);}}>{c}</li>)}
             </ul>
           </div>
-
           <div>
-            <h3 className="font-bold mb-4 text-sm uppercase tracking-wider">Company</h3>
+            <h3 className="font-bold mb-4 text-sm">Company</h3>
             <ul className="space-y-2 text-xs text-gray-500 dark:text-gray-400">
-              <li className="hover:text-naija cursor-pointer" onClick={()=>{onNavigate('home'); window.scrollTo(0,0);}}>Home</li>
-              <li className="hover:text-naija cursor-pointer" onClick={()=>{onNavigate('advertise'); window.scrollTo(0,0);}}>Advertise</li>
-              <li className="hover:text-naija cursor-pointer" onClick={()=>{onNavigate('support'); window.scrollTo(0,0);}}>Support & Contact</li>
-              <li className="hover:text-naija cursor-pointer text-naija font-bold mt-2 pt-2 border-t dark:border-gray-700" onClick={()=>onNavigate('login')}>Staff Access</li>
+              <li className="hover:text-naija cursor-pointer" onClick={()=>onNavigate('home')}>Home</li>
+              <li className="hover:text-naija cursor-pointer" onClick={()=>onNavigate('advertise')}>Advertise</li>
+              <li className="hover:text-naija cursor-pointer" onClick={()=>onNavigate('support')}>Support & Contact</li>
+              <li className="text-gray-300 hover:text-gray-400 cursor-pointer mt-2 pt-2 text-[10px]" onClick={()=>onNavigate('login')}>Staff Access</li>
             </ul>
           </div>
-
           <div>
-            <h3 className="font-bold mb-4 text-sm uppercase tracking-wider">Connect</h3>
+            <h3 className="font-bold mb-4 text-sm">Connect</h3>
             <div className="flex gap-2 mb-4">
-                <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-[#1877F2] hover:text-white transition-colors"><Facebook className="w-4 h-4"/></a>
-                <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-[#1DA1F2] hover:text-white transition-colors"><Twitter className="w-4 h-4"/></a>
-                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-[#E4405F] hover:text-white transition-colors"><Instagram className="w-4 h-4"/></a>
-                <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-[#0A66C2] hover:text-white transition-colors"><Linkedin className="w-4 h-4"/></a>
-                <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-[#FF0000] hover:text-white transition-colors"><Youtube className="w-4 h-4"/></a>
+              {[Facebook, Twitter, Instagram, Linkedin, Youtube].map((Icon,i)=>(<button key={i} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-naija hover:text-white transition-colors"><Icon className="w-4 h-4"/></button>))}
             </div>
-            <p className="text-[10px] text-gray-400">Email us: <a href="mailto:theplatformreport@gmail.com" className="hover:text-naija">theplatformreport@gmail.com</a></p>
+            <p className="text-[10px] text-gray-400">Email: <a href="mailto:theplatformreport@gmail.com" className="hover:text-naija">theplatformreport@gmail.com</a></p>
           </div>
         </div>
-        <div className="text-center text-xs text-gray-400 border-t border-gray-100 dark:border-gray-700 pt-6">
-            &copy; {currentYear} The Platform. All rights reserved.
-        </div>
+        <div className="text-center text-xs text-gray-400">&copy; 2024 The Platform. All rights reserved.</div>
       </div>
     </footer>
   );
 }
 
 function SupportPage({ onBack }: any) {
-    const [submitted, setSubmitted] = useState(false);
-    
-    const handleSubmit = (e: React.FormEvent) => {
+    const [form, setForm] = useState({name:'', email:'', subject:'General Inquiry', message:''});
+    const [status, setStatus] = useState('');
+
+    const submit = async (e:React.FormEvent) => {
         e.preventDefault();
-        setSubmitted(true);
-        // In a real app, you would send this to your backend
-        setTimeout(() => {
-            setSubmitted(false);
-            alert("Message sent successfully! We will get back to you shortly.");
-        }, 2000);
+        setStatus('sending');
+        const res = await fetch(`${API_URL}/support`, {
+            method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(form)
+        });
+        if(res.ok) { setStatus('success'); setForm({name:'', email:'', subject:'General Inquiry', message:''}); }
+        else setStatus('error');
     };
 
     return (
         <div className="max-w-4xl mx-auto px-4 py-12">
             <button onClick={onBack} className="flex items-center gap-1 text-gray-500 mb-8 text-sm hover:text-naija"><ChevronRight className="w-4 h-4 rotate-180"/> Back to Home</button>
-            
             <div className="grid md:grid-cols-2 gap-12">
-                {/* Contact Information */}
                 <div>
                     <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Contact & Support</h2>
-                    <p className="text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
-                        Have questions, news tips, or advertising inquiries? Reach out to us. We are here to help and listen to our community.
-                    </p>
-
                     <div className="space-y-6">
                         <div className="flex items-start gap-4">
-                            <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-full shrink-0">
-                                <MapPin className="w-6 h-6 text-naija" />
-                            </div>
+                            <MapPin className="w-6 h-6 text-naija shrink-0" />
                             <div>
-                                <h3 className="font-bold text-gray-900 dark:text-white mb-1">Our Office Address</h3>
-                                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                                    Suite 0.02, Maryam Babangida National Centre for Women Development,<br/>
-                                    Opposite Central Bank of Nigeria Headquarters,<br/>
-                                    Central Business District, Abuja, FCT.
-                                </p>
+                                <h3 className="font-bold text-gray-900 dark:text-white mb-1">Office Address</h3>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Suite 0.02, Maryam Babangida National Centre for Women Development,<br/>Opposite CBN Headquarters,<br/>Central Business District, Abuja, FCT.</p>
                             </div>
                         </div>
-
                         <div className="flex items-start gap-4">
-                            <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-full shrink-0">
-                                <Mail className="w-6 h-6 text-naija" />
-                            </div>
+                            <Mail className="w-6 h-6 text-naija shrink-0" />
                             <div>
-                                <h3 className="font-bold text-gray-900 dark:text-white mb-1">Email Us</h3>
+                                <h3 className="font-bold text-gray-900 dark:text-white mb-1">Email</h3>
                                 <a href="mailto:theplatformreport@gmail.com" className="text-sm text-naija hover:underline">theplatformreport@gmail.com</a>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                {/* Contact Form */}
                 <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Send us a message</h3>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Full Name</label>
-                            <input required className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 dark:text-white focus:ring-2 focus:ring-naija outline-none transition-all" placeholder="Your name" />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Email Address</label>
-                            <input required type="email" className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 dark:text-white focus:ring-2 focus:ring-naija outline-none transition-all" placeholder="you@example.com" />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Subject</label>
-                            <select className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 dark:text-white focus:ring-2 focus:ring-naija outline-none transition-all">
-                                <option>General Inquiry</option>
-                                <option>News Tip / Submission</option>
-                                <option>Advertising Support</option>
-                                <option>Technical Issue</option>
-                                <option>Other</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Message</label>
-                            <textarea required rows={4} className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 dark:text-white focus:ring-2 focus:ring-naija outline-none transition-all resize-none" placeholder="How can we help you?"></textarea>
-                        </div>
-                        <button disabled={submitted} className="w-full bg-black hover:bg-gray-800 text-white font-bold py-4 rounded-lg transition-colors flex items-center justify-center gap-2">
-                            {submitted ? 'Sending...' : 'Send Message'} <Send className="w-4 h-4" />
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Send Message</h3>
+                    <form onSubmit={submit} className="space-y-4">
+                        <input required placeholder="Full Name" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} className="w-full p-3 rounded-lg border dark:bg-gray-900 dark:text-white outline-none" />
+                        <input required type="email" placeholder="Email" value={form.email} onChange={e=>setForm({...form, email:e.target.value})} className="w-full p-3 rounded-lg border dark:bg-gray-900 dark:text-white outline-none" />
+                        <select value={form.subject} onChange={e=>setForm({...form, subject:e.target.value})} className="w-full p-3 rounded-lg border dark:bg-gray-900 dark:text-white outline-none">
+                            <option>General Inquiry</option><option>News Tip</option><option>Advertising</option>
+                        </select>
+                        <textarea required rows={4} placeholder="Message" value={form.message} onChange={e=>setForm({...form, message:e.target.value})} className="w-full p-3 rounded-lg border dark:bg-gray-900 dark:text-white outline-none resize-none"></textarea>
+                        <button disabled={status==='sending'} className="w-full bg-black text-white font-bold py-4 rounded-lg flex items-center justify-center gap-2">
+                            {status==='sending' ? 'Sending...' : 'Send Message'} <Send className="w-4 h-4" />
                         </button>
+                        {status==='success' && <p className="text-green-600 text-center">Message sent successfully!</p>}
                     </form>
                 </div>
             </div>
@@ -302,9 +234,189 @@ function SupportPage({ onBack }: any) {
     );
 }
 
+function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, onDelete, onApproveSubmission, onRejectSubmission, onApproveAd, onRejectAd, onLogout }: any) {
+  const [tab, setTab] = useState('live');
+  const [editId, setEditId] = useState<string|null>(null);
+  const [form, setForm] = useState({ title: '', subHeadline: '', category: 'Politics', author: 'Staff Reporter', content: '', image: '' });
+  const [supportMsgs, setSupportMsgs] = useState<SupportMsg[]>([]);
+  const [showAuthor, setShowAuthor] = useState(true);
+  const [breaking, setBreaking] = useState(false);
+
+  useEffect(() => {
+      if(tab === 'support') {
+          fetch(`${API_URL}/admin/support`).then(r=>r.json()).then(data => {
+              if(Array.isArray(data)) setSupportMsgs(data);
+          });
+      }
+  }, [tab]);
+
+  const handleEdit = (a: Article) => {
+    setEditId(a.id);
+    setForm({ title: a.title, subHeadline: a.subHeadline||'', category: a.category, author: a.author, content: a.content, image: a.image });
+    setBreaking(a.isBreaking||false);
+    setTab('compose');
+  };
+
+  const submit = (e: any) => {
+    e.preventDefault();
+    const payload: any = { ...form, isBreaking: breaking, status: 'published' };
+    if(!showAuthor) payload.author = "The Platform";
+    if(editId) { onUpdate(editId, payload); alert('Updated!'); setEditId(null); }
+    else { onPublish(payload); alert('Published!'); }
+    setForm({ title: '', subHeadline: '', category: 'Politics', author: 'Staff Reporter', content: '', image: '' });
+    setTab('live');
+  };
+
+  const handleFile = async (e: any) => { if(e.target.files?.[0]) setForm({...form, image: await readFileAsDataURL(e.target.files[0])}); };
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="bg-white dark:bg-gray-800 p-4 shadow flex justify-between items-center sticky top-0 z-20">
+        <span className="font-bold flex items-center gap-2 dark:text-white"><Shield className="w-5 h-5"/> Editorial</span>
+        <button onClick={onLogout} className="text-red-500 text-sm font-bold">Logout</button>
+      </div>
+      
+      <div className="p-4 max-w-5xl mx-auto">
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+            {['live','pending','ads','support','compose'].map(t => (
+                <button key={t} onClick={()=>setTab(t)} className={`px-4 py-2 rounded-full text-xs font-bold uppercase ${tab===t ? 'bg-black text-white' : 'bg-white text-gray-600 border'}`}>
+                    {t} {t==='pending' && `(${pendingArticles.length})`} {t==='ads' && `(${ads.filter((a:any)=>a.status==='Pending').length})`}
+                </button>
+            ))}
+        </div>
+
+        {tab === 'live' && (
+            <div className="space-y-3">
+                {articles.map((a:any) => (
+                    <div key={a.id} className="bg-white dark:bg-gray-800 p-3 rounded shadow flex justify-between items-center">
+                        <div className="flex gap-3 items-center">
+                            <img src={a.image} className="w-10 h-10 rounded object-cover" />
+                            <div><h4 className="font-bold text-sm dark:text-white line-clamp-1">{a.title}</h4><span className="text-xs text-gray-500">{a.date}</span></div>
+                        </div>
+                        <div className="flex gap-2">
+                            <button onClick={()=>handleEdit(a)} className="text-blue-500 text-xs font-bold border px-2 py-1 rounded">Edit</button>
+                            <button onClick={()=>{if(confirm('Delete?')) onDelete(a.id)}} className="text-red-500 text-xs font-bold border px-2 py-1 rounded">Delete</button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        )}
+
+        {tab === 'support' && (
+            <div className="space-y-3">
+                {supportMsgs.length === 0 && <p className="text-gray-500">No messages yet.</p>}
+                {supportMsgs.map(msg => (
+                    <div key={msg.id} className="bg-white dark:bg-gray-800 p-4 rounded shadow border-l-4 border-blue-500">
+                        <div className="flex justify-between mb-2">
+                            <h4 className="font-bold text-sm">{msg.subject}</h4>
+                            <span className="text-xs text-gray-500">{new Date(msg.date).toLocaleDateString()}</span>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">{msg.message}</p>
+                        <p className="text-xs font-bold text-blue-600">From: {msg.name} ({msg.email})</p>
+                    </div>
+                ))}
+            </div>
+        )}
+
+        {tab === 'ads' && ads.map((a:any) => (
+            <div key={a.id} className="bg-white p-4 rounded shadow mb-4 border-l-4 border-yellow-400">
+                <div className="flex justify-between mb-2">
+                    <div>
+                        <h4 className="font-bold text-sm">{a.plan}</h4>
+                        <p className="text-xs text-gray-500">Client: {a.clientName} ({a.email})</p>
+                    </div>
+                    <span className="text-green-600 font-mono font-bold text-sm">₦{a.amount.toLocaleString()}</span>
+                </div>
+                
+                <div className="bg-gray-50 p-3 rounded text-xs mb-3 border">
+                    <p><strong>Headline:</strong> {a.adHeadline || 'N/A'}</p>
+                    <p className="mt-1"><strong>Content:</strong> {a.adContent || 'N/A'}</p>
+                    {a.adContentFile && (
+                        <a href={a.adContentFile} download className="mt-2 inline-flex items-center gap-1 text-blue-600 underline">
+                            <Download className="w-3 h-3"/> Download Attached Material
+                        </a>
+                    )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div><p className="text-[10px] font-bold">Receipt</p><img src={a.receiptImage} className="h-24 object-cover border w-full" /></div>
+                    <div><p className="text-[10px] font-bold">Ad Creative</p>{a.adImage && <img src={a.adImage} className="h-24 object-cover border w-full" />}</div>
+                </div>
+
+                {a.status === 'Pending' && (
+                    <div className="flex gap-2">
+                        <button onClick={()=>onApproveAd(a.id)} className="bg-green-500 text-white px-3 py-2 rounded text-xs flex-1 font-bold">Approve</button>
+                        <button onClick={()=>onRejectAd(a.id)} className="bg-red-500 text-white px-3 py-2 rounded text-xs flex-1 font-bold">Reject</button>
+                    </div>
+                )}
+                {a.status === 'Active' && <span className="text-green-600 font-bold text-xs flex items-center gap-1"><CheckCircle className="w-3 h-3"/> Active</span>}
+            </div>
+        ))}
+
+        {tab === 'compose' && (
+            <div className="bg-white dark:bg-gray-800 p-6 rounded shadow">
+                <form onSubmit={submit} className="space-y-4">
+                    <input required placeholder="Headline" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} className="w-full border p-2 rounded text-sm" />
+                    <input placeholder="Sub-Headline" value={form.subHeadline} onChange={e=>setForm({...form, subHeadline:e.target.value})} className="w-full border p-2 rounded text-sm" />
+                    <div className="grid grid-cols-2 gap-4">
+                        <select value={form.category} onChange={e=>setForm({...form, category:e.target.value})} className="border p-2 rounded text-sm">
+                            {CATEGORIES.map(c=><option key={c}>{c}</option>)}
+                        </select>
+                        <div className="flex items-center gap-2">
+                            <input type="checkbox" checked={showAuthor} onChange={e=>setShowAuthor(e.target.checked)} />
+                            <input value={form.author} onChange={e=>setForm({...form, author:e.target.value})} disabled={!showAuthor} className="border p-2 rounded text-sm w-full" />
+                        </div>
+                    </div>
+                    <input type="file" onChange={handleFile} className="text-xs" />
+                    <textarea required placeholder="Content" value={form.content} onChange={e=>setForm({...form, content:e.target.value})} className="w-full border p-2 rounded h-40 text-sm" />
+                    <div className="flex items-center gap-2">
+                        <input type="checkbox" checked={breaking} onChange={e=>setBreaking(e.target.checked)} />
+                        <label className="text-red-600 font-bold text-sm">Breaking News</label>
+                    </div>
+                    <button className="bg-green-600 text-white w-full py-3 rounded font-bold">{editId ? 'Update' : 'Publish Live'}</button>
+                </form>
+            </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SubmitNewsPage({ onBack, onSubmit }: any) {
+  const [form, setForm] = useState({ title: '', category: 'Politics', content: '', image: '' });
+  
+  const submit = (e: any) => {
+    e.preventDefault();
+    onSubmit({ ...form, author: 'Citizen Reporter' });
+  };
+
+  const handleFile = async (e: any) => {
+    if(e.target.files?.[0]) setForm({...form, image: await readFileAsDataURL(e.target.files[0])});
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-8">
+      <button onClick={onBack} className="mb-6 flex items-center text-gray-500 text-sm"><ChevronRight className="w-4 h-4 rotate-180"/> Back</button>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
+        <h2 className="text-2xl font-bold mb-6 dark:text-white">Submit Story</h2>
+        <form onSubmit={submit} className="space-y-4">
+            <input required placeholder="Headline" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} className="w-full border p-3 rounded" />
+            <select value={form.category} onChange={e=>setForm({...form, category:e.target.value})} className="w-full border p-3 rounded">
+                {CATEGORIES.map(c=><option key={c}>{c}</option>)}
+            </select>
+            <input type="file" onChange={handleFile} className="text-sm" />
+            <textarea required placeholder="Content" value={form.content} onChange={e=>setForm({...form, content:e.target.value})} className="w-full border p-3 rounded h-40" />
+            <button className="bg-naija text-white w-full py-3 rounded font-bold">Submit for Review</button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// --- AdvertisePage Component with Two-Step Modal ---
 function AdvertisePage({ onBack, onSubmitAd }: any) {
   const [showModal, setShowModal] = useState(false);
-  const [step, setStep] = useState<'info' | 'form'>('info');
+  const [step, setStep] = useState<'info' | 'form'>('info'); // 'info' or 'form'
   const [plan, setPlan] = useState<any>(null);
   
   // Form State
@@ -345,14 +457,17 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <button onClick={onBack} className="mb-6 flex items-center text-gray-600 dark:text-gray-400 text-sm"><ChevronRight className="w-4 h-4 rotate-180" /> Back</button>
-      <h2 className="text-2xl font-bold text-center mb-8 dark:text-white">Advertise with The Platform</h2>
-      
-      <div className="grid md:grid-cols-3 gap-6">
+
+      <div className="text-center mb-12">
+        <h2 className="text-3xl font-serif font-bold text-gray-900 dark:text-white mb-4">Advertise with The Platform</h2>
+        <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">Reach millions of Nigerians daily. Choose the plan that fits your brand.</p>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-8">
         {plans.map((p) => (
           <div key={p.name} className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border dark:border-gray-700 text-center flex flex-col h-full">
-            <h3 className="font-bold text-lg dark:text-white">{p.name}</h3>
-            <p className="text-2xl font-bold text-naija my-4">₦{p.price.toLocaleString()}</p>
-            {/* RESTORED FEATURES LIST */}
+            <h3 className="font-bold text-xl text-gray-900 dark:text-white mb-2">{p.name}</h3>
+            <p className="text-3xl font-bold text-naija">₦{p.price.toLocaleString()}</p>
             <div className="flex-grow text-left space-y-2 mb-4">
               {p.features.map((feature, idx) => (
                 <div key={idx} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
@@ -361,12 +476,20 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
                 </div>
               ))}
             </div>
-            <button onClick={() => handlePlanSelect(p)} className="w-full bg-black text-white py-2 rounded-lg text-sm mt-auto">Choose Plan</button>
+            <div className="p-6 pt-0">
+              <button 
+                onClick={() => handlePlanSelect(p)}
+                className="w-full bg-gray-900 dark:bg-white dark:text-gray-900 text-white py-3 rounded-lg font-medium hover:opacity-90 transition-opacity"
+              >
+                Choose Plan
+              </button>
+            </div>
           </div>
         ))}
       </div>
 
-      {showModal && (
+      {/* Payment Modal */}
+      {showPaymentModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-900 rounded-xl w-full max-w-xs max-h-[70vh] overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col">
             <div className="p-3 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800 shrink-0">
@@ -419,275 +542,6 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
   );
 }
 
-function ArticleReader({ article, allArticles, onBack, onNavigateToArticle, isAdmin }: any) {
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [form, setForm] = useState({ name: '', email: '', content: '' });
-  const [showShare, setShowShare] = useState(false);
-
-  useEffect(() => {
-    window.scrollTo(0,0);
-    fetch(`${API_URL}/articles/${article.id}/comments`).then(r=>r.json()).then(d=> Array.isArray(d) && setComments(d)).catch(console.error);
-  }, [article.id]);
-
-  const postComment = async (e: any) => {
-    e.preventDefault();
-    const res = await fetch(`${API_URL}/comments`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({ articleId: article.id, author: form.name, email: form.email, content: form.content })
-    });
-    if(res.ok) {
-        setComments([await res.json(), ...comments]);
-        setForm({name:'', email:'', content:''});
-    }
-  };
-
-  const related = allArticles.filter((a: any) => a.category === article.category && a.id !== article.id).slice(0,3);
-
-  return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <button onClick={onBack} className="flex items-center gap-1 text-gray-500 mb-4 text-sm"><ChevronRight className="w-4 h-4 rotate-180"/> Back</button>
-      
-      <article className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
-        <div className="h-64 md:h-[400px] w-full bg-gray-100">
-            <img src={article.image} alt={article.title} className="w-full h-full object-cover object-center" />
-        </div>
-        <div className="p-6 md:p-8">
-            <span className="bg-naija text-white text-xs font-bold px-2 py-1 rounded uppercase">{article.category}</span>
-            <h1 className="text-2xl md:text-3xl font-serif font-bold text-gray-900 dark:text-white mt-3 mb-2">{article.title}</h1>
-            {article.subHeadline && <h2 className="text-lg text-gray-600 dark:text-gray-300 font-medium mb-4 pl-4 border-l-4 border-naija">{article.subHeadline}</h2>}
-            
-            <div className="flex items-center justify-between py-4 border-y dark:border-gray-700 mb-6">
-                <div className="flex items-center gap-2 text-sm">
-                    <User className="w-4 h-4 text-gray-400" />
-                    <span className="font-bold dark:text-white">{article.author}</span>
-                    <span className="text-gray-400">• {article.date}</span>
-                </div>
-                <div className="relative">
-                    <button onClick={() => setShowShare(!showShare)} className="text-gray-400 hover:text-naija"><Share2 className="w-5 h-5" /></button>
-                    {showShare && (
-                        <div className="absolute right-0 top-8 bg-white dark:bg-gray-700 shadow-xl border p-2 rounded z-10 w-32 flex flex-col gap-1">
-                            {['whatsapp','facebook','twitter','linkedin'].map(p => (
-                                <button key={p} onClick={()=>handleSocialShare(p, article.title)} className="text-left text-xs capitalize p-1 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-white">{p}</button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            <div className="prose dark:prose-invert max-w-none text-justify text-gray-800 dark:text-gray-200">
-                {article.content.split('\n').map((p:string, i:number) => <p key={i} className="mb-4 leading-relaxed">{p}</p>)}
-            </div>
-        </div>
-
-        {related.length > 0 && (
-            <div className="bg-gray-50 dark:bg-gray-900 p-6 md:p-8 border-t dark:border-gray-700">
-                <h3 className="font-bold text-lg mb-4 dark:text-white">Related News</h3>
-                <div className="grid md:grid-cols-3 gap-4">
-                    {related.map((r:any) => (
-                        <div key={r.id} onClick={()=>onNavigateToArticle(r)} className="bg-white dark:bg-gray-800 rounded shadow-sm overflow-hidden cursor-pointer flex flex-col">
-                            <img src={r.image} className="h-32 w-full object-cover object-center" />
-                            <div className="p-3 flex-grow"><h4 className="font-bold text-sm line-clamp-2 dark:text-white">{r.title}</h4></div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        )}
-
-        <div className="p-6 md:p-8 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-            <h3 className="font-bold text-lg mb-4 dark:text-white">Comments ({comments.length})</h3>
-            <form onSubmit={postComment} className="mb-6 bg-white dark:bg-gray-800 p-4 rounded shadow-sm">
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                    <input required placeholder="Name" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} className="border p-2 rounded text-sm dark:bg-gray-700 dark:text-white" />
-                    <input required placeholder="Email" value={form.email} onChange={e=>setForm({...form, email:e.target.value})} className="border p-2 rounded text-sm dark:bg-gray-700 dark:text-white" />
-                </div>
-                <textarea required placeholder="Comment..." value={form.content} onChange={e=>setForm({...form, content:e.target.value})} className="border p-2 rounded text-sm w-full h-20 dark:bg-gray-700 dark:text-white mb-3" />
-                <button type="submit" className="bg-naija text-white px-4 py-2 rounded text-sm font-bold">Post Comment</button>
-            </form>
-            <div className="space-y-3">
-                {comments.map(c => (
-                    <div key={c.id} className="bg-white dark:bg-gray-800 p-3 rounded border dark:border-gray-700">
-                        <div className="flex justify-between text-xs mb-1">
-                            <span className="font-bold dark:text-white">{c.author}</span>
-                            <span className="text-gray-500">{new Date(c.date).toLocaleString()}</span>
-                        </div>
-                        <p className="text-sm text-gray-700 dark:text-gray-300">{c.content}</p>
-                    </div>
-                ))}
-            </div>
-        </div>
-      </article>
-    </div>
-  );
-}
-
-function StaffLoginPage({ onLogin, onBack }: any) {
-  const [pw, setPw] = useState('');
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-sm text-center">
-        <Lock className="w-10 h-10 mx-auto mb-4 text-gray-700 dark:text-white" />
-        <h2 className="text-xl font-bold mb-6 dark:text-white">Staff Login</h2>
-        <form onSubmit={(e)=>{e.preventDefault(); if(pw==='adminOdohhhhh1@') onLogin(); else alert('Invalid Code');}}>
-            <input autoFocus type="password" placeholder="Access Code" value={pw} onChange={e=>setPw(e.target.value)} className="w-full p-3 border rounded mb-4 dark:bg-gray-700 dark:text-white" />
-            <button className="w-full bg-black text-white py-3 rounded font-bold mb-2">Login</button>
-            <button type="button" onClick={onBack} className="text-sm text-gray-500">Back Home</button>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, onDelete, onApproveSubmission, onRejectSubmission, onApproveAd, onRejectAd, onLogout }: any) {
-  const [tab, setTab] = useState('live');
-  const [editId, setEditId] = useState<string|null>(null);
-  const [form, setForm] = useState({ title: '', subHeadline: '', category: 'Politics', author: 'Staff Reporter', content: '', image: '' });
-  const [showAuthor, setShowAuthor] = useState(true);
-  const [breaking, setBreaking] = useState(false);
-
-  const handleEdit = (a: Article) => {
-    setEditId(a.id);
-    setForm({ title: a.title, subHeadline: a.subHeadline||'', category: a.category, author: a.author, content: a.content, image: a.image });
-    setBreaking(a.isBreaking||false);
-    setTab('compose');
-  };
-
-  const submit = (e: any) => {
-    e.preventDefault();
-    const payload: any = { ...form, isBreaking: breaking, status: 'published' };
-    if(!showAuthor) payload.author = "The Platform";
-    
-    if(editId) { onUpdate(editId, payload); alert('Updated!'); setEditId(null); }
-    else { onPublish(payload); alert('Published!'); }
-    
-    setForm({ title: '', subHeadline: '', category: 'Politics', author: 'Staff Reporter', content: '', image: '' });
-    setTab('live');
-  };
-
-  const handleFile = async (e: any) => {
-    if(e.target.files?.[0]) setForm({...form, image: await readFileAsDataURL(e.target.files[0])});
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="bg-white dark:bg-gray-800 p-4 shadow flex justify-between items-center sticky top-0 z-20">
-        <span className="font-bold flex items-center gap-2 dark:text-white"><Shield className="w-5 h-5"/> Editorial</span>
-        <button onClick={onLogout} className="text-red-500 text-sm font-bold">Logout</button>
-      </div>
-      
-      <div className="p-4 max-w-5xl mx-auto">
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-            {['live','pending','ads','compose'].map(t => (
-                <button key={t} onClick={()=>setTab(t)} className={`px-4 py-2 rounded-full text-xs font-bold uppercase ${tab===t ? 'bg-black text-white' : 'bg-white text-gray-600 border'}`}>
-                    {t} {t==='pending' && `(${pendingArticles.length})`} {t==='ads' && `(${ads.filter((a:any)=>a.status==='Pending').length})`}
-                </button>
-            ))}
-        </div>
-
-        {tab === 'live' && (
-            <div className="space-y-3">
-                {articles.map((a:any) => (
-                    <div key={a.id} className="bg-white dark:bg-gray-800 p-3 rounded shadow flex justify-between items-center">
-                        <div className="flex gap-3 items-center">
-                            <img src={a.image} className="w-10 h-10 rounded object-cover" />
-                            <div><h4 className="font-bold text-sm dark:text-white line-clamp-1">{a.title}</h4><span className="text-xs text-gray-500">{a.date}</span></div>
-                        </div>
-                        <div className="flex gap-2">
-                            <button onClick={()=>handleEdit(a)} className="text-blue-500 text-xs font-bold border px-2 py-1 rounded">Edit</button>
-                            <button onClick={()=>{if(confirm('Delete?')) onDelete(a.id)}} className="text-red-500 text-xs font-bold border px-2 py-1 rounded">Delete</button>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        )}
-
-        {tab === 'compose' && (
-            <div className="bg-white dark:bg-gray-800 p-6 rounded shadow">
-                <h3 className="font-bold mb-4 dark:text-white">{editId ? 'Edit Article' : 'Compose New'}</h3>
-                <form onSubmit={submit} className="space-y-4">
-                    <input required placeholder="Headline" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} className="w-full border p-2 rounded text-sm" />
-                    <input placeholder="Sub-Headline" value={form.subHeadline} onChange={e=>setForm({...form, subHeadline:e.target.value})} className="w-full border p-2 rounded text-sm" />
-                    <div className="grid grid-cols-2 gap-4">
-                        <select value={form.category} onChange={e=>setForm({...form, category:e.target.value})} className="border p-2 rounded text-sm">
-                            {CATEGORIES.map(c=><option key={c}>{c}</option>)}
-                        </select>
-                        <div className="flex items-center gap-2">
-                            <input type="checkbox" checked={showAuthor} onChange={e=>setShowAuthor(e.target.checked)} />
-                            <input value={form.author} onChange={e=>setForm({...form, author:e.target.value})} disabled={!showAuthor} className="border p-2 rounded text-sm w-full" />
-                        </div>
-                    </div>
-                    <input type="file" onChange={handleFile} className="text-xs" />
-                    <textarea required placeholder="Content" value={form.content} onChange={e=>setForm({...form, content:e.target.value})} className="w-full border p-2 rounded h-40 text-sm" />
-                    <div className="flex items-center gap-2">
-                        <input type="checkbox" checked={breaking} onChange={e=>setBreaking(e.target.checked)} />
-                        <label className="text-red-600 font-bold text-sm">Breaking News</label>
-                    </div>
-                    <button className="bg-green-600 text-white w-full py-3 rounded font-bold">{editId ? 'Update' : 'Publish Live'}</button>
-                </form>
-            </div>
-        )}
-
-        {tab === 'pending' && pendingArticles.map((a:any) => (
-            <div key={a.id} className="bg-white p-4 rounded shadow mb-2">
-                <h4 className="font-bold">{a.title}</h4>
-                <div className="flex gap-2 mt-2">
-                    <button onClick={()=>onApproveSubmission(a)} className="bg-green-500 text-white px-3 py-1 rounded text-xs">Approve</button>
-                    <button onClick={()=>onRejectSubmission(a.id)} className="bg-red-500 text-white px-3 py-1 rounded text-xs">Reject</button>
-                </div>
-            </div>
-        ))}
-
-        {tab === 'ads' && ads.filter((a:any)=>a.status==='Pending').map((a:any) => (
-            <div key={a.id} className="bg-white p-4 rounded shadow mb-2 border-l-4 border-yellow-400">
-                <div className="flex justify-between">
-                    <h4 className="font-bold text-xs">{a.plan}</h4>
-                    <span className="text-green-600 font-mono font-bold text-xs">₦{a.amount.toLocaleString()}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 my-2">
-                    <img src={a.receiptImage} className="h-20 object-cover border w-full" />
-                    {a.adImage && <img src={a.adImage} className="h-20 object-cover border w-full" />}
-                </div>
-                <div className="flex gap-2">
-                    <button onClick={()=>onApproveAd(a.id)} className="bg-green-500 text-white px-3 py-1 rounded text-xs flex-1">Approve</button>
-                    <button onClick={()=>onRejectAd(a.id)} className="bg-red-500 text-white px-3 py-1 rounded text-xs flex-1">Reject</button>
-                </div>
-            </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function SubmitNewsPage({ onBack, onSubmit }: any) {
-  const [form, setForm] = useState({ title: '', category: 'Politics', content: '', image: '' });
-  
-  const submit = (e: any) => {
-    e.preventDefault();
-    onSubmit({ ...form, author: 'Citizen Reporter' });
-  };
-
-  const handleFile = async (e: any) => {
-    if(e.target.files?.[0]) setForm({...form, image: await readFileAsDataURL(e.target.files[0])});
-  };
-
-  return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <button onClick={onBack} className="mb-6 flex items-center text-gray-500 text-sm"><ChevronRight className="w-4 h-4 rotate-180"/> Back</button>
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
-        <h2 className="text-2xl font-bold mb-6 dark:text-white">Submit Story</h2>
-        <form onSubmit={submit} className="space-y-4">
-            <input required placeholder="Headline" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} className="w-full border p-3 rounded" />
-            <select value={form.category} onChange={e=>setForm({...form, category:e.target.value})} className="w-full border p-3 rounded">
-                {CATEGORIES.map(c=><option key={c}>{c}</option>)}
-            </select>
-            <input type="file" onChange={handleFile} className="text-sm" />
-            <textarea required placeholder="Content" value={form.content} onChange={e=>setForm({...form, content:e.target.value})} className="w-full border p-3 rounded h-40" />
-            <button className="bg-naija text-white w-full py-3 rounded font-bold">Submit for Review</button>
-        </form>
-      </div>
-    </div>
-  );
-}
-
 // --- Main App Component ---
 function App() {
   const [view, setView] = useState('home');
@@ -703,7 +557,7 @@ function App() {
   // Initial Load
   useEffect(() => {
     const link = document.createElement('link'); link.rel='icon'; 
-    link.href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23008753' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><line x1='2' y1='12' x2='22' y2='12'></line><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z'></path></svg>";
+    link.href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23008753' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><line x1='2' y1='12' x2='22' y2='12'></line><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'></path></svg>";
     document.head.appendChild(link);
     document.title = "The Platform";
 
@@ -722,9 +576,16 @@ function App() {
   // Data Handlers
   const handleAdminLogin = async () => {
     setIsAdmin(true);
+    // Fetch all pending data
     const res = await fetch(`${API_URL}/admin/pending-articles`);
     const data = await res.json();
     if(Array.isArray(data)) setPending(data.map(mapArticleFromDB));
+    
+    // Fetch all ads for admin (including pending)
+    const adsRes = await fetch(`${API_URL}/admin/ads`); 
+    const adsData = await adsRes.json();
+    if(Array.isArray(adsData)) setAds(adsData);
+
     setView('admin');
   };
 
@@ -770,24 +631,26 @@ function App() {
 
   const approveAd = async (id: string) => {
     const res = await fetch(`${API_URL}/admin/ads/${id}/approve`, {method:'PATCH'});
-    if(res.ok) setAds([...ads, await res.json()]);
+    if(res.ok) {
+        const updated = await res.json();
+        // Update local state to show it's active now
+        setAds(ads.map(ad => ad.id === id ? {...ad, status: 'active'} : ad));
+    }
   };
 
-  // Rendering
+  const rejectAd = (id: string) => {
+      // In real app, call delete endpoint
+      setAds(ads.filter(a => a.id !== id));
+  };
+
   if(loading) return <div className="min-h-screen flex items-center justify-center"><RefreshCw className="animate-spin text-green-600"/></div>;
   if(view === 'login') return <StaffLoginPage onLogin={handleAdminLogin} onBack={()=>setView('home')}/>;
   if(view === 'support') return <SupportPage onBack={()=>setView('home')}/>;
-  if(view === 'admin' && isAdmin) return <AdminDashboard articles={articles} pendingArticles={pending} ads={ads} onPublish={publishNews} onUpdate={updateNews} onDelete={deleteNews} onApproveSubmission={approveArticle} onRejectSubmission={(id:string)=>setPending(pending.filter(a=>a.id!==id))} onApproveAd={approveAd} onRejectAd={(id:string)=>setAds(ads.filter(a=>a.id!==id))} onLogout={()=>{setIsAdmin(false); setView('home');}} />;
+  if(view === 'admin' && isAdmin) return <AdminDashboard articles={articles} pendingArticles={pending} ads={ads} onPublish={publishNews} onUpdate={updateNews} onDelete={deleteNews} onApproveSubmission={approveArticle} onRejectSubmission={(id:string)=>setPending(pending.filter(a=>a.id!==id))} onApproveAd={approveAd} onRejectAd={rejectAd} onLogout={()=>{setIsAdmin(false); setView('home');}} />;
 
   const filtered = cat === 'All' ? articles : articles.filter(a => a.category === cat);
   const activeAds = ads.filter(a=>a.status==='Active' || a.status==='active');
-  const feed = [...filtered];
-  // Inject Ads
-  activeAds.filter(a=>a.plan==='Sponsored Article').forEach((ad, i) => {
-    const idx = (i+1)*3;
-    if(idx < feed.length) feed.splice(idx, 0, {isAd:true, data:ad});
-  });
-
+  
   return (
     <div className={`min-h-screen flex flex-col ${isDark ? 'dark' : ''}`}>
       <Header onNavigate={setView} toggleTheme={toggleTheme} isDark={isDark} activeAd={activeAds.find(a=>a.plan==='Header Leaderboard')} />
@@ -845,10 +708,12 @@ function App() {
 
                 <h3 className="text-2xl font-serif font-bold mb-6 dark:text-white flex items-center gap-2"><LayoutGrid className="w-6 h-6"/> Latest Stories</h3>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {feed.slice(1).map((item: any) => item.isAd ? (
-                        <SponsoredArticleCard key={item.data.id} ad={item.data} />
-                    ) : (
+                    {filtered.slice(1).map((item) => (
                         <ArticleCard key={item.id} article={item} onClick={()=>{setSelectedArticle(item); setView('article');}} />
+                    ))}
+                    {/* Inject Ads in grid */}
+                    {activeAds.filter(a=>a.plan==='Sponsored Article').map(ad => (
+                        <SponsoredArticleCard key={ad.id} ad={ad} />
                     ))}
                 </div>
             </div>
