@@ -16,7 +16,6 @@ const API_URL = "https://platform-backend-54nn.onrender.com/api";
 const APP_URL = window.location.origin; 
 
 // --- Error Boundary Component ---
-// This prevents the "White Screen" crash if data loading fails
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {
     super(props);
@@ -232,6 +231,7 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
           <div key={p.name} className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border dark:border-gray-700 text-center flex flex-col h-full">
             <h3 className="font-bold text-lg dark:text-white">{p.name}</h3>
             <p className="text-2xl font-bold text-naija my-4">₦{p.price.toLocaleString()}</p>
+            {/* RESTORED FEATURES LIST */}
             <div className="flex-grow text-left space-y-2 mb-4">
               {p.features.map((feature, idx) => (
                 <div key={idx} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
@@ -287,7 +287,7 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
                     <input type="file" required accept="image/*" onChange={e => handleFile(e, setReceipt)} className="w-full text-[10px] dark:text-gray-400" />
                   </div>
 
-                  <button type="submit" className="w-full bg-naija text-white py-2 rounded text-xs font-bold mt-2 shadow-md hover:bg-green-700">Submit</button>
+                  <button type="submit" className="w-full bg-naija text-white py-2 rounded text-xs font-bold mt-2 shadow-md hover:bg-green-700">Submit Proof & Creative</button>
                 </form>
               )}
             </div>
@@ -582,7 +582,7 @@ function App() {
   // Initial Load
   useEffect(() => {
     const link = document.createElement('link'); link.rel='icon'; 
-    link.href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23008753' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><line x1='2' y1='12' x2='22' y2='12'></line><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'></path></svg>";
+    link.href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23008753' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><line x1='2' y1='12' x2='22' y2='12'></line><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z'></path></svg>";
     document.head.appendChild(link);
     document.title = "The Platform";
 
