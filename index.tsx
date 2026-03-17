@@ -41,8 +41,9 @@ interface SupportMsg { id: string; name: string; email: string; subject: string;
 // --- Utils ---
 const mapArticleFromDB = (dbArticle: any): Article => ({
   ...dbArticle,
-  subHeadline: dbArticle.sub_headline || '',
-  isBreaking: dbArticle.is_breaking, 
+  id: dbArticle.id || dbArticle._id?.toString(),
+  subHeadline: dbArticle.subHeadline || dbArticle.sub_headline || '',
+  isBreaking: dbArticle.isBreaking ?? dbArticle.is_breaking ?? false,
   date: dbArticle.date ? new Date(dbArticle.date).toLocaleDateString() : 'Just now'
 });
 
@@ -601,12 +602,23 @@ function App() {
     document.head.appendChild(link);
     document.title = "The Platform";
 
-    const loadData = async () => {
+    const loadData = async (attempt = 1) => {
         try {
-            const [news, activeAds] = await Promise.all([fetch(`${API_URL}/articles`).then(r=>r.json()), fetch(`${API_URL}/ads/active`).then(r=>r.json())]);
+            const [news, activeAds] = await Promise.all([
+                fetch(`${API_URL}/articles`).then(r => { if(!r.ok) throw new Error('fetch failed'); return r.json(); }),
+                fetch(`${API_URL}/ads/active`).then(r => { if(!r.ok) throw new Error('fetch failed'); return r.json(); })
+            ]);
             if(Array.isArray(news)) setArticles(news.map(mapArticleFromDB));
             if(Array.isArray(activeAds)) setAds(activeAds);
-        } catch(e) { console.error(e); } finally { setLoading(false); }
+            setLoading(false);
+        } catch(e) {
+            console.error(`Load attempt ${attempt} failed:`, e);
+            if(attempt < 4) {
+                setTimeout(() => loadData(attempt + 1), attempt * 3000);
+            } else {
+                setLoading(false);
+            }
+        }
     };
     loadData();
   }, []);
@@ -683,7 +695,7 @@ function App() {
       setAds(ads.filter(a => a.id !== id));
   };
 
-  if(loading) return <div className="min-h-screen flex items-center justify-center"><RefreshCw className="animate-spin text-green-600"/></div>;
+  if(loading) return <div className="min-h-screen flex flex-col items-center justify-center gap-3"><RefreshCw className="animate-spin text-green-600 w-8 h-8"/><p className="text-gray-500 text-sm">Loading The Platform...</p><p className="text-gray-400 text-xs">Waking up server, please wait...</p></div>;
   if(view === 'login') return <StaffLoginPage onLogin={handleAdminLogin} onBack={()=>setView('home')}/>;
   if(view === 'support') return <SupportPage onBack={()=>setView('home')}/>;
   if(view === 'admin' && isAdmin) return <AdminDashboard articles={articles} pendingArticles={pending} ads={ads} onPublish={publishNews} onUpdate={updateNews} onDelete={deleteNews} onApproveSubmission={approveArticle} onRejectSubmission={(id:string)=>setPending(pending.filter(a=>a.id!==id))} onApproveAd={approveAd} onRejectAd={rejectAd} onLogout={()=>{setIsAdmin(false); setView('home');}} />;
