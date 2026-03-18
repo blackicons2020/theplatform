@@ -6,7 +6,7 @@ import {
   TrendingUp, Shield, FileText, Users, DollarSign, 
   LayoutGrid, PenTool, Image as ImageIcon, Sun, Moon,
   CreditCard, Trash2, Lock, Globe, Facebook, Twitter, Instagram, Linkedin, Youtube,
-  Link as LinkIcon, ExternalLink, ArrowRight, RefreshCw, Upload, MapPin, Mail, Download
+  Link as LinkIcon, ExternalLink, ArrowRight, RefreshCw, Upload, MapPin, Mail, Download, Edit2
 } from 'lucide-react';
 
 // --- Configuration ---
@@ -366,13 +366,15 @@ function SupportMsgCard({ msg, onReplied }: { msg: SupportMsg; onReplied: (m: an
   );
 }
 
-function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, onDelete, onApproveSubmission, onRejectSubmission, onApproveAd, onRejectAd, onLogout }: any) {
+function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, onDelete, onApproveSubmission, onRejectSubmission, onApproveAd, onRejectAd, onDeleteAd, onUpdateAd, onLogout }: any) {
   const [tab, setTab] = useState('live');
   const [editId, setEditId] = useState<string|null>(null);
   const [form, setForm] = useState({ title: '', subHeadline: '', category: 'Politics', author: 'Staff Reporter', content: '', image: '' });
   const [supportMsgs, setSupportMsgs] = useState<SupportMsg[]>([]);
   const [showAuthor, setShowAuthor] = useState(true);
   const [breaking, setBreaking] = useState(false);
+  const [editingAd, setEditingAd] = useState<any>(null);
+  const [adForm, setAdForm] = useState({ clientName: '', email: '', plan: '', amount: '', adHeadline: '', adContent: '', adUrl: '', status: '' });
 
   useEffect(() => {
       if(tab === 'support') {
@@ -471,40 +473,91 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
             </div>
         )}
 
-        {tab === 'ads' && ads.map((a:any) => (
-            <div key={a.id} className="bg-white p-4 rounded shadow mb-4 border-l-4 border-yellow-400">
+        {tab === 'ads' && (
+          <div className="space-y-4">
+            {ads.length === 0 && <p className="text-gray-500 text-sm">No adverts yet.</p>}
+            {ads.map((a:any) => (
+              <div key={a.id} className="bg-white dark:bg-gray-800 p-4 rounded shadow border-l-4 border-yellow-400">
                 <div className="flex justify-between mb-2">
-                    <div>
-                        <h4 className="font-bold text-sm">{a.plan}</h4>
-                        <p className="text-xs text-gray-500">Client: {a.clientName} ({a.email})</p>
-                    </div>
+                  <div>
+                    <h4 className="font-bold text-sm dark:text-white">{a.plan}</h4>
+                    <p className="text-xs text-gray-500">Client: {a.clientName} ({a.email})</p>
+                  </div>
+                  <div className="flex items-start gap-2">
                     <span className="text-green-600 font-mono font-bold text-sm">₦{a.amount?.toLocaleString() || '0'}</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${a.status === 'active' ? 'bg-green-100 text-green-700' : a.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>{a.status}</span>
+                  </div>
                 </div>
-                
-                <div className="bg-gray-50 p-3 rounded text-xs mb-3 border">
-                    <p><strong>Headline:</strong> {a.adHeadline || 'N/A'}</p>
-                    <p className="mt-1"><strong>Content:</strong> {a.adContent || 'N/A'}</p>
-                    {a.adContentFile && (
-                        <a href={a.adContentFile} download className="mt-2 inline-flex items-center gap-1 text-blue-600 underline">
-                            <Download className="w-3 h-3"/> Download Attached Material
-                        </a>
-                    )}
+
+                <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded text-xs mb-3 border dark:border-gray-700">
+                  <p className="dark:text-gray-300"><strong>Headline:</strong> {a.adHeadline || 'N/A'}</p>
+                  <p className="mt-1 dark:text-gray-300"><strong>Content:</strong> {a.adContent || 'N/A'}</p>
+                  {a.adUrl && <p className="mt-1 dark:text-gray-300"><strong>URL:</strong> {a.adUrl}</p>}
+                  {a.adContentFile && (
+                    <a href={a.adContentFile} download className="mt-2 inline-flex items-center gap-1 text-blue-600 underline">
+                      <Download className="w-3 h-3"/> Download Attached Material
+                    </a>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 mb-3">
-                    <div><p className="text-[10px] font-bold">Receipt</p><img src={a.receiptImage} className="h-24 object-cover border w-full" /></div>
-                    <div><p className="text-[10px] font-bold">Ad Creative</p>{a.adImage && <img src={a.adImage} className="h-24 object-cover border w-full" />}</div>
+                  <div><p className="text-[10px] font-bold dark:text-gray-300">Receipt</p>{a.receiptImage && <img src={a.receiptImage} className="h-24 object-cover border w-full" />}</div>
+                  <div><p className="text-[10px] font-bold dark:text-gray-300">Ad Creative</p>{a.adImage && <img src={a.adImage} className="h-24 object-cover border w-full" />}</div>
                 </div>
 
-                {a.status === 'pending' && (
-                    <div className="flex gap-2">
-                        <button onClick={()=>onApproveAd(a.id)} className="bg-green-500 text-white px-3 py-2 rounded text-xs flex-1 font-bold">Approve</button>
-                        <button onClick={()=>onRejectAd(a.id)} className="bg-red-500 text-white px-3 py-2 rounded text-xs flex-1 font-bold">Reject</button>
+                <div className="flex flex-wrap gap-2">
+                  {a.status === 'pending' && (
+                    <>
+                      <button onClick={()=>onApproveAd(a.id)} className="bg-green-500 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1"><CheckCircle className="w-3 h-3"/> Approve</button>
+                      <button onClick={()=>onRejectAd(a.id)} className="bg-red-500 text-white px-3 py-1.5 rounded text-xs font-bold">Reject</button>
+                    </>
+                  )}
+                  {a.status === 'active' && <span className="text-green-600 font-bold text-xs flex items-center gap-1"><CheckCircle className="w-3 h-3"/> Active</span>}
+                  <button onClick={()=>{ setEditingAd(a); setAdForm({ clientName: a.clientName||'', email: a.email||'', plan: a.plan||'', amount: a.amount||'', adHeadline: a.adHeadline||'', adContent: a.adContent||'', adUrl: a.adUrl||'', status: a.status||'pending' }); }} className="ml-auto bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1"><Edit2 className="w-3 h-3"/> Edit</button>
+                  <button onClick={()=>{ if(confirm('Delete this ad?')) onDeleteAd(a.id); }} className="bg-red-600 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1"><Trash2 className="w-3 h-3"/> Delete</button>
+                </div>
+              </div>
+            ))}
+
+            {/* Edit Ad Modal */}
+            {editingAd && (
+              <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={()=>setEditingAd(null)}>
+                <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-lg p-6" onClick={e=>e.stopPropagation()}>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-bold text-lg dark:text-white">Edit Advert</h3>
+                    <button onClick={()=>setEditingAd(null)} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><label className="text-xs font-bold text-gray-500">Client Name</label><input value={adForm.clientName} onChange={e=>setAdForm({...adForm, clientName:e.target.value})} className="w-full border rounded p-2 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white mt-1" /></div>
+                      <div><label className="text-xs font-bold text-gray-500">Email</label><input value={adForm.email} onChange={e=>setAdForm({...adForm, email:e.target.value})} className="w-full border rounded p-2 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white mt-1" /></div>
                     </div>
-                )}
-                {a.status === 'active' && <span className="text-green-600 font-bold text-xs flex items-center gap-1"><CheckCircle className="w-3 h-3"/> Active</span>}
-            </div>
-        ))}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><label className="text-xs font-bold text-gray-500">Plan</label>
+                        <select value={adForm.plan} onChange={e=>setAdForm({...adForm, plan:e.target.value})} className="w-full border rounded p-2 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white mt-1">
+                          {['Header Leaderboard','Sidebar Banner','Sponsored Article'].map(p=><option key={p}>{p}</option>)}
+                        </select>
+                      </div>
+                      <div><label className="text-xs font-bold text-gray-500">Status</label>
+                        <select value={adForm.status} onChange={e=>setAdForm({...adForm, status:e.target.value})} className="w-full border rounded p-2 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white mt-1">
+                          {['pending','active','rejected'].map(s=><option key={s}>{s}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div><label className="text-xs font-bold text-gray-500">Amount (₦)</label><input type="number" value={adForm.amount} onChange={e=>setAdForm({...adForm, amount:e.target.value})} className="w-full border rounded p-2 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white mt-1" /></div>
+                    <div><label className="text-xs font-bold text-gray-500">Ad Headline</label><input value={adForm.adHeadline} onChange={e=>setAdForm({...adForm, adHeadline:e.target.value})} className="w-full border rounded p-2 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white mt-1" /></div>
+                    <div><label className="text-xs font-bold text-gray-500">Ad Content / Message</label><textarea value={adForm.adContent} onChange={e=>setAdForm({...adForm, adContent:e.target.value})} rows={3} className="w-full border rounded p-2 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white mt-1 resize-none" /></div>
+                    <div><label className="text-xs font-bold text-gray-500">Destination URL</label><input value={adForm.adUrl} onChange={e=>setAdForm({...adForm, adUrl:e.target.value})} className="w-full border rounded p-2 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white mt-1" /></div>
+                  </div>
+                  <div className="flex gap-3 mt-5">
+                    <button onClick={()=>setEditingAd(null)} className="flex-1 border dark:border-gray-700 py-2 rounded text-sm dark:text-white">Cancel</button>
+                    <button onClick={async ()=>{ await onUpdateAd(editingAd.id, {...adForm, amount: Number(adForm.amount)}); setEditingAd(null); }} className="flex-1 bg-naija text-white py-2 rounded text-sm font-bold">Save Changes</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {tab === 'compose' && (
             <div className="bg-white dark:bg-gray-800 p-6 rounded shadow">
@@ -1038,15 +1091,27 @@ function App() {
   };
 
   const rejectAd = (id: string) => {
-      // In real app, call delete endpoint
       setAds(ads.filter(a => a.id !== id));
+  };
+
+  const deleteAd = async (id: string) => {
+    const res = await fetch(`${API_URL}/admin/ads/${id}`, { method: 'DELETE' });
+    if (res.ok) setAds(ads.filter(a => a.id !== id));
+  };
+
+  const updateAd = async (id: string, data: any) => {
+    const res = await fetch(`${API_URL}/admin/ads/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    if (res.ok) {
+      const updated = await res.json();
+      setAds(ads.map(a => (a.id === id || a._id === id) ? { ...updated, id: updated._id || updated.id } : a));
+    }
   };
 
   if(loading) return <div className="min-h-screen flex flex-col items-center justify-center gap-3"><RefreshCw className="animate-spin text-green-600 w-8 h-8"/><p className="text-gray-500 text-sm">Loading The Platform...</p><p className="text-gray-400 text-xs">Waking up server, please wait...</p></div>;
   if(loadError && articles.length === 0) return <div className="min-h-screen flex flex-col items-center justify-center gap-3 p-4 text-center"><AlertCircle className="text-red-500 w-10 h-10"/><p className="text-gray-700 dark:text-gray-300 text-sm font-semibold">Could not load news data</p><p className="text-gray-400 text-xs">The server may be starting up. Please try again.</p><button onClick={()=>{ setLoading(true); loadData(); }} className="mt-3 bg-naija text-white px-6 py-2 rounded-full text-sm font-medium">Retry</button></div>;
   if(view === 'login') return <StaffLoginPage onLogin={handleAdminLogin} onBack={()=>setView('home')}/>;
   if(view === 'support') return <SupportPage onBack={()=>setView('home')}/>;
-  if(view === 'admin' && isAdmin) return <AdminDashboard articles={articles} pendingArticles={pending} ads={ads} onPublish={publishNews} onUpdate={updateNews} onDelete={deleteNews} onApproveSubmission={approveArticle} onRejectSubmission={(id:string)=>setPending(pending.filter(a=>a.id!==id))} onApproveAd={approveAd} onRejectAd={rejectAd} onLogout={()=>{setIsAdmin(false); setView('home');}} />;
+  if(view === 'admin' && isAdmin) return <AdminDashboard articles={articles} pendingArticles={pending} ads={ads} onPublish={publishNews} onUpdate={updateNews} onDelete={deleteNews} onApproveSubmission={approveArticle} onRejectSubmission={(id:string)=>setPending(pending.filter(a=>a.id!==id))} onApproveAd={approveAd} onRejectAd={rejectAd} onDeleteAd={deleteAd} onUpdateAd={updateAd} onLogout={()=>{setIsAdmin(false); setView('home');}} />;
 
   const filtered = cat === 'All' ? articles : articles.filter(a => a.category === cat);
   const activeAds = ads.filter(a=>a.status==='Active' || a.status==='active');
