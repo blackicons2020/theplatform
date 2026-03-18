@@ -847,7 +847,8 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
 }
 
 function StaffLoginPage({ onLogin, onBack }: any) {
-  const [pw, setPw] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -861,9 +862,6 @@ function StaffLoginPage({ onLogin, onBack }: any) {
       setError('Invalid Access Code');
     }
   };
-  // Fixed variable names here to match state
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
