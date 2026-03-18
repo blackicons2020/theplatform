@@ -138,21 +138,9 @@ function LazyImage({ articleId, className, fallbackClass }: { articleId: string;
   );
 }
 
-function Header({ onNavigate, toggleTheme, isDark, activeAd }: any) {
+function Header({ onNavigate, toggleTheme, isDark }: any) {
   return (
     <header className="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-      {activeAd && (
-        <div className="bg-gray-100 dark:bg-gray-900 w-full h-24 relative flex items-center overflow-hidden">
-          <a href={activeAd.adUrl || '#'} target="_blank" rel="noreferrer" className="w-full h-full flex items-center">
-             {activeAd.adImage && <img src={activeAd.adImage} className="h-full w-auto object-cover object-center shrink-0" />}
-             <div className="flex-1 px-4 min-w-0">
-               {activeAd.adHeadline && <p className="font-bold text-sm text-gray-900 dark:text-white truncate">{activeAd.adHeadline}</p>}
-               {activeAd.adContent && <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mt-0.5">{activeAd.adContent}</p>}
-             </div>
-          </a>
-          <span className="absolute top-1 right-1 bg-black/50 text-white text-[10px] px-1">Ad</span>
-        </div>
-      )}
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => onNavigate('home')}>
           <div className="w-8 h-8 bg-naija rounded-full flex items-center justify-center text-white font-bold"><Globe className="w-5 h-5"/></div>
@@ -499,7 +487,7 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
                     <div className="grid grid-cols-2 gap-3">
                       <div><label className="text-xs font-bold text-gray-500">Plan</label>
                         <select value={adForm.plan} onChange={e=>setAdForm({...adForm, plan:e.target.value})} className="w-full border rounded p-2 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white mt-1">
-                          {['Header Leaderboard','Sidebar Banner','Sponsored Article'].map(p=><option key={p}>{p}</option>)}
+                          {['Homepage Banner','Article Page Ad','Sponsored Article','Header Leaderboard','Sidebar Banner'].map(p=><option key={p}>{p}</option>)}
                         </select>
                       </div>
                       <div><label className="text-xs font-bold text-gray-500">Status</label>
@@ -607,9 +595,9 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   const plans = [
-    { name: 'Sidebar Banner',      price: 20000,  features: ['Visible on all article pages', 'Square format', 'Weekly rotation'] },
-    { name: 'Sponsored Article',   price: 70000,  features: ['Full feature story', 'Permanent link', 'Shared on social media', 'In-feed native display'] },
-    { name: 'Header Leaderboard',  price: 150000, features: ['Premium top placement', 'High visibility', 'Monthly duration', 'All pages'] },
+    { name: 'Article Page Ad',   price: 20000,  features: ['Shown on all article reading pages', 'Image + headline + text displayed', 'Between content and comments', 'Weekly rotation'] },
+    { name: 'Sponsored Article', price: 70000,  features: ['Full feature story in article feed', 'Permanent link', 'Shared on social media', 'In-feed native display'] },
+    { name: 'Homepage Banner',   price: 150000, features: ['Bold banner on the homepage', 'Image + headline + text always visible', 'High visibility placement', 'Monthly duration'] },
   ];
 
   const handleFile = async (e: any, setter: any) => {
@@ -887,23 +875,26 @@ function ArticleReader({ article, allArticles, activeAds = [], onBack, onNavigat
       </article>
 
       {/* In-article ad space */}
-      {activeAds.find((a: any)=>a.plan==='Sidebar Banner' || a.plan==='Sponsored Article') ? (
-        <a href={activeAds.find((a: any)=>a.plan==='Sidebar Banner' || a.plan==='Sponsored Article')?.adUrl||'#'} target="_blank" rel="noopener noreferrer" className="block mb-10 rounded-xl overflow-hidden border dark:border-gray-700 relative">
-          {activeAds.find((a: any)=>a.plan==='Sidebar Banner' || a.plan==='Sponsored Article')?.adImage && (
-            <img src={activeAds.find((a: any)=>a.plan==='Sidebar Banner' || a.plan==='Sponsored Article')?.adImage} className="w-full h-48 object-cover" />
-          )}
-          <div className="p-4 bg-white dark:bg-gray-800">
-            <p className="font-bold text-sm dark:text-white">{activeAds.find((a: any)=>a.plan==='Sidebar Banner' || a.plan==='Sponsored Article')?.adHeadline}</p>
-            <p className="text-xs text-gray-500 mt-1">{activeAds.find((a: any)=>a.plan==='Sidebar Banner' || a.plan==='Sponsored Article')?.adContent}</p>
+      {(() => {
+        const artAd = activeAds.find((a: any) => a.plan === 'Article Page Ad' || a.plan === 'Sidebar Banner' || a.plan === 'Sponsored Article');
+        return artAd ? (
+          <a href={artAd.adUrl || '#'} target="_blank" rel="noopener noreferrer" className="block mb-10 rounded-xl overflow-hidden border dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+            {artAd.adImage && <img src={artAd.adImage} className="w-full h-48 object-cover" />}
+            <div className="p-4">
+              <span className="text-[10px] uppercase tracking-wide font-bold text-gray-400">Sponsored</span>
+              {artAd.adHeadline && <p className="font-bold text-base dark:text-white mt-1">{artAd.adHeadline}</p>}
+              {artAd.adContent && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{artAd.adContent}</p>}
+              <span className="inline-block mt-2 text-naija text-xs font-bold">Learn More →</span>
+            </div>
+            <span className="block text-right text-[10px] text-gray-300 px-3 pb-2">Ad</span>
+          </a>
+        ) : (
+          <div className="mb-10 h-32 bg-gray-50 dark:bg-gray-800 border-2 border-dashed dark:border-gray-700 flex flex-col items-center justify-center text-center p-4 rounded-xl">
+            <span className="text-sm font-bold text-gray-400">Ad Space Available</span>
+            <span className="text-xs text-gray-400 mt-1">Advertise on The People's Platform</span>
           </div>
-          <span className="absolute top-2 right-2 bg-black/50 text-white text-[10px] px-1.5 py-0.5 rounded">Ad</span>
-        </a>
-      ) : (
-        <div className="mb-10 h-32 bg-gray-50 dark:bg-gray-800 border-2 border-dashed dark:border-gray-700 flex flex-col items-center justify-center text-center p-4 rounded-xl">
-          <span className="text-sm font-bold text-gray-400">Ad Space Available</span>
-          <span className="text-xs text-gray-400 mt-1">Advertise on The People's Platform</span>
-        </div>
-      )}
+        );
+      })()}
 
       <div className="border-t dark:border-gray-700 pt-8 mb-12">
         <h3 className="text-xl font-bold dark:text-white mb-6 flex items-center gap-2"><MessageSquare className="w-5 h-5" /> Comments ({comments.length})</h3>
@@ -1128,7 +1119,7 @@ function App() {
 
   return (
     <div className={`min-h-screen flex flex-col ${isDark ? 'dark' : ''}`}>
-      <Header onNavigate={setView} toggleTheme={toggleTheme} isDark={isDark} activeAd={activeAds.find(a=>a.plan==='Header Leaderboard')} />
+      <Header onNavigate={setView} toggleTheme={toggleTheme} isDark={isDark} />
       <main className="flex-grow">
         {view === 'home' && (
             <div className="max-w-7xl mx-auto px-4 py-6">
@@ -1164,20 +1155,48 @@ function App() {
                                     ))}
                                 </div>
                             </div>
-                            {activeAds.find(a=>a.plan==='Sidebar Banner') ? (
-                                <a href={activeAds.find(a=>a.plan==='Sidebar Banner')?.adUrl||'#'} target="_blank" className="block h-64 bg-gray-100 rounded-xl overflow-hidden relative">
-                                    <img src={activeAds.find(a=>a.plan==='Sidebar Banner')?.adImage} className="w-full h-full object-cover object-center" />
-                                    <span className="absolute bottom-1 right-1 bg-black/50 text-white text-[10px] px-1">Ad</span>
+                            {(() => {
+                              const sAd = activeAds.find((a: any) => a.plan === 'Article Page Ad' || a.plan === 'Sidebar Banner');
+                              return sAd ? (
+                                <a href={sAd.adUrl || '#'} target="_blank" rel="noopener noreferrer" className="block rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                                  {sAd.adImage && <img src={sAd.adImage} className="w-full h-40 object-cover" />}
+                                  <div className="p-3">
+                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Sponsored</span>
+                                    {sAd.adHeadline && <p className="font-bold text-sm text-gray-900 dark:text-white mt-0.5">{sAd.adHeadline}</p>}
+                                    {sAd.adContent && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{sAd.adContent}</p>}
+                                    <span className="inline-block mt-2 text-naija text-xs font-bold">Learn More →</span>
+                                  </div>
                                 </a>
-                            ) : (
-                                <div className="h-64 bg-gray-50 border-2 border-dashed flex flex-col items-center justify-center text-center p-4 rounded-xl">
-                                    <span className="text-sm font-bold text-gray-400">Ad Space Available</span>
-                                    <button onClick={()=>setView('advertise')} className="text-xs text-naija mt-2 underline">Place Ad</button>
+                              ) : (
+                                <div className="h-64 bg-gray-50 dark:bg-gray-800 border-2 border-dashed dark:border-gray-700 flex flex-col items-center justify-center text-center p-4 rounded-xl">
+                                  <span className="text-sm font-bold text-gray-400">Ad Space Available</span>
+                                  <button onClick={()=>setView('advertise')} className="text-xs text-naija mt-2 underline">Place Ad</button>
                                 </div>
-                            )}
+                              );
+                            })()}
                         </div>
                     </div>
                 )}
+
+                {/* Homepage Banner Ad */}
+                {(() => {
+                  const hAd = activeAds.find((a: any) => a.plan === 'Homepage Banner' || a.plan === 'Header Leaderboard');
+                  return hAd ? (
+                    <a href={hAd.adUrl || '#'} target="_blank" rel="noopener noreferrer"
+                      className="flex mb-8 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow">
+                      {hAd.adImage && (
+                        <div className="w-44 shrink-0"><img src={hAd.adImage} className="w-full h-full object-cover" /></div>
+                      )}
+                      <div className="flex-1 p-5 flex flex-col justify-center gap-1">
+                        <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Sponsored</span>
+                        {hAd.adHeadline && <h4 className="font-bold text-xl text-gray-900 dark:text-white leading-snug">{hAd.adHeadline}</h4>}
+                        {hAd.adContent && <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 line-clamp-3">{hAd.adContent}</p>}
+                        <span className="mt-3 text-naija text-sm font-bold">Learn More →</span>
+                      </div>
+                      <span className="self-start m-2 text-[10px] text-gray-300 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">Ad</span>
+                    </a>
+                  ) : null;
+                })()}
 
                 <h3 className="text-2xl font-serif font-bold mb-6 dark:text-white flex items-center gap-2"><LayoutGrid className="w-6 h-6"/> Latest Stories</h3>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
