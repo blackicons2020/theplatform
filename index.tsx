@@ -616,6 +616,29 @@ function App() {
   const [isDark, setIsDark] = useState(false);
   const [cat, setCat] = useState('All');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+
+  const loadData = async (attempt = 1) => {
+      console.log(`[Platform] Loading data (attempt ${attempt})...`);
+      setLoadError(false);
+      try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 30000);
+          const [news, activeAds] = await Promise.all([
+              fetch(`${API_URL}/articles`, { signal: controller.signal }).then(r => { if(!r.ok) throw new Error(`Articles: HTTP ${r.status}`); return r.json(); }).catch(err => { console.error('[Platform] Articles fetch error:', err.message); return []; }),
+              fetch(`${API_URL}/ads/active`, { signal: controller.signal }).then(r => { if(!r.ok) throw new Error(`Ads: HTTP ${r.status}`); return r.json(); }).catch(err => { console.error('[Platform] Ads fetch error:', err.message); return []; })
+          ]);
+          clearTimeout(timeout);
+          if(Array.isArray(news) && news.length > 0) { setArticles(news.map(mapArticleFromDB)); setLoading(false); }
+          else if(attempt < 4) setTimeout(() => loadData(attempt + 1), 3000);
+          else { setLoading(false); setLoadError(true); }
+          if(Array.isArray(activeAds)) setAds(activeAds);
+      } catch(e) {
+          console.error(`[Platform] Load attempt ${attempt} failed:`, e);
+          if(attempt < 4) setTimeout(() => loadData(attempt + 1), 3000);
+          else { setLoading(false); setLoadError(true); }
+      }
+  };
 
   // Initial Load
   useEffect(() => {
@@ -623,30 +646,6 @@ function App() {
     link.href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23008753' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><line x1='2' y1='12' x2='22' y2='12'></line><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z'></path></svg>";
     document.head.appendChild(link);
     document.title = "The Platform";
-
-    const loadData = async (attempt = 1) => {
-        try {
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 45000);
-            const [news, activeAds] = await Promise.all([
-                fetch(`${API_URL}/articles`, { signal: controller.signal }).then(r => { if(!r.ok) throw new Error('fetch failed'); return r.json(); }).catch(() => []),
-                fetch(`${API_URL}/ads/active`, { signal: controller.signal }).then(r => { if(!r.ok) throw new Error('fetch failed'); return r.json(); }).catch(() => [])
-            ]);
-            clearTimeout(timeout);
-            if(Array.isArray(news) && news.length > 0) setArticles(news.map(mapArticleFromDB));
-            if(Array.isArray(activeAds)) setAds(activeAds);
-            if(Array.isArray(news) && news.length > 0) setLoading(false);
-            else if(attempt < 3) setTimeout(() => loadData(attempt + 1), 10000);
-            else setLoading(false);
-        } catch(e) {
-            console.error(`Load attempt ${attempt} failed:`, e);
-            if(attempt < 3) {
-                setTimeout(() => loadData(attempt + 1), 10000);
-            } else {
-                setLoading(false);
-            }
-        }
-    };
     loadData();
   }, []);
 
@@ -723,6 +722,7 @@ function App() {
   };
 
   if(loading) return <div className="min-h-screen flex flex-col items-center justify-center gap-3"><RefreshCw className="animate-spin text-green-600 w-8 h-8"/><p className="text-gray-500 text-sm">Loading The Platform...</p><p className="text-gray-400 text-xs">Waking up server, please wait...</p></div>;
+  if(loadError && articles.length === 0) return <div className="min-h-screen flex flex-col items-center justify-center gap-3 p-4 text-center"><AlertCircle className="text-red-500 w-10 h-10"/><p className="text-gray-700 dark:text-gray-300 text-sm font-semibold">Could not load news data</p><p className="text-gray-400 text-xs">The server may be starting up. Please try again.</p><button onClick={()=>{ setLoading(true); loadData(); }} className="mt-3 bg-naija text-white px-6 py-2 rounded-full text-sm font-medium">Retry</button></div>;
   if(view === 'login') return <StaffLoginPage onLogin={handleAdminLogin} onBack={()=>setView('home')}/>;
   if(view === 'support') return <SupportPage onBack={()=>setView('home')}/>;
   if(view === 'admin' && isAdmin) return <AdminDashboard articles={articles} pendingArticles={pending} ads={ads} onPublish={publishNews} onUpdate={updateNews} onDelete={deleteNews} onApproveSubmission={approveArticle} onRejectSubmission={(id:string)=>setPending(pending.filter(a=>a.id!==id))} onApproveAd={approveAd} onRejectAd={rejectAd} onLogout={()=>{setIsAdmin(false); setView('home');}} />;
