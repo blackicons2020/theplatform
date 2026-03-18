@@ -56,6 +56,32 @@ const readFileAsDataURL = (file: File): Promise<string> => {
   });
 };
 
+// Compress image via canvas before upload (max 1200px, JPEG 0.6 quality)
+const compressImage = (file: File, maxWidth = 1200, quality = 0.6): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxWidth / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+// In-memory thumbnail cache (survives re-renders within the session)
+const thumbCache: Record<string, string> = {};
+
 const handleSocialShare = (platform: string, title: string) => {
     const text = encodeURIComponent(`Read this on The Platform: ${title}`);
     const url = encodeURIComponent(APP_URL);
@@ -69,20 +95,42 @@ const handleSocialShare = (platform: string, title: string) => {
 
 // --- Components ---
 
+// Lazy image that only loads when visible in viewport, uses batch cache
 function LazyImage({ articleId, className, fallbackClass }: { articleId: string; className: string; fallbackClass?: string }) {
-  const [src, setSrc] = useState('');
-  const [loaded, setLoaded] = useState(false);
+  const [src, setSrc] = useState(thumbCache[articleId] || '');
+  const [visible, setVisible] = useState(false);
+  const ref = React.useRef<HTMLDivElement>(null);
+
   useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setVisible(true); obs.disconnect(); }
+    }, { rootMargin: '200px' });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!visible || src) return;
+    // Check cache first (may have been filled by batch load)
+    if (thumbCache[articleId]) { setSrc(thumbCache[articleId]); return; }
     let cancelled = false;
     fetch(`${API_URL}/articles/${articleId}/image`)
       .then(r => r.json())
-      .then(data => { if (!cancelled && data.image) { setSrc(data.image); } setLoaded(true); })
-      .catch(() => { if (!cancelled) setLoaded(true); });
+      .then(data => { if (!cancelled && data.image) { thumbCache[articleId] = data.image; setSrc(data.image); } })
+      .catch(() => {});
     return () => { cancelled = true; };
-  }, [articleId]);
-  if (!loaded) return <div className={`${fallbackClass || ''} animate-pulse bg-gray-200 dark:bg-gray-700`} />;
-  if (!src) return <div className={fallbackClass || ''}><Globe className="w-10 h-10 text-gray-400 dark:text-gray-500" /></div>;
-  return <img src={src} className={className} />;
+  }, [visible, articleId, src]);
+
+  return (
+    <div ref={ref} className={fallbackClass || ''}>
+      {src ? <img src={src} className={className} /> : (
+        visible ? <div className={`${fallbackClass || ''} flex items-center justify-center`}><Globe className="w-10 h-10 text-gray-400 dark:text-gray-500 animate-pulse" /></div>
+                : <div className={`${fallbackClass || ''} bg-gray-200 dark:bg-gray-700`} />
+      )}
+    </div>
+  );
 }
 
 function Header({ onNavigate, toggleTheme, isDark, activeAd }: any) {
@@ -285,7 +333,13 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
     setTab('live');
   };
 
-  const handleFile = async (e: any) => { if(e.target.files?.[0]) setForm({...form, image: await readFileAsDataURL(e.target.files[0])}); };
+  const handleFile = async (e: any) => {
+    if(e.target.files?.[0]) {
+      const file = e.target.files[0];
+      const compressed = file.type.startsWith('image/') ? await compressImage(file) : await readFileAsDataURL(file);
+      setForm({...form, image: compressed});
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -433,7 +487,11 @@ function SubmitNewsPage({ onBack, onSubmit }: any) {
   };
 
   const handleFile = async (e: any) => {
-    if(e.target.files?.[0]) setForm({...form, image: await readFileAsDataURL(e.target.files[0])});
+    if(e.target.files?.[0]) {
+      const file = e.target.files[0];
+      const compressed = file.type.startsWith('image/') ? await compressImage(file) : await readFileAsDataURL(file);
+      setForm({...form, image: compressed});
+    }
   };
 
   return (
@@ -479,7 +537,11 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
   ];
 
   const handleFile = async (e: any, setter: any) => {
-    if(e.target.files?.[0]) setter(await readFileAsDataURL(e.target.files[0]));
+    if(e.target.files?.[0]) {
+      const file = e.target.files[0];
+      const result = file.type.startsWith('image/') ? await compressImage(file) : await readFileAsDataURL(file);
+      setter(result);
+    }
   };
 
   const handleSubmit = (e: any) => {
@@ -632,14 +694,17 @@ function ArticleReader({ article, allArticles, onBack, onNavigateToArticle, isAd
   useEffect(() => {
     window.scrollTo(0, 0);
     setLoading(true);
-    fetch(`${API_URL}/articles/${article.id}`)
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+    fetch(`${API_URL}/articles/${article.id}`, { signal: controller.signal })
       .then(r => { if(!r.ok) throw new Error('Not found'); return r.json(); })
       .then(data => { setFullArticle(mapArticleFromDB(data)); setLoading(false); })
       .catch(() => { setFullArticle(article); setLoading(false); });
-    fetch(`${API_URL}/articles/${article.id}/comments`)
+    fetch(`${API_URL}/articles/${article.id}/comments`, { signal: controller.signal })
       .then(r => r.json())
       .then(data => { if(Array.isArray(data)) setComments(data); })
       .catch(() => {});
+    return () => { clearTimeout(timeout); controller.abort(); };
   }, [article.id]);
 
   const submitComment = async (e: React.FormEvent) => {
@@ -659,9 +724,17 @@ function ArticleReader({ article, allArticles, onBack, onNavigateToArticle, isAd
   const related = allArticles.filter((a: Article) => a.id !== article.id && a.category === article.category).slice(0, 3);
 
   if (loading) return (
-    <div className="max-w-4xl mx-auto px-4 py-12 text-center">
-      <RefreshCw className="animate-spin text-green-600 w-8 h-8 mx-auto mb-3" />
-      <p className="text-gray-500 text-sm">Loading article...</p>
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <button onClick={onBack} className="mb-6 flex items-center text-gray-500 text-sm hover:text-naija"><ChevronRight className="w-4 h-4 rotate-180" /> Back to Home</button>
+      <div className="mb-6">
+        <span className="bg-naija text-white text-xs font-bold px-2 py-1 rounded uppercase">{article.category}</span>
+        <h1 className="text-3xl md:text-4xl font-serif font-bold mt-3 mb-2 dark:text-white">{article.title}</h1>
+        <p className="text-gray-600 dark:text-gray-400 text-sm">{article.excerpt}</p>
+      </div>
+      <div className="flex items-center gap-3 text-gray-400 py-12 justify-center">
+        <RefreshCw className="animate-spin w-5 h-5" />
+        <span className="text-sm">Loading full article...</span>
+      </div>
     </div>
   );
 
@@ -756,7 +829,21 @@ function App() {
               fetch(`${API_URL}/ads/active`, { signal: controller.signal }).then(r => { if(!r.ok) throw new Error(`Ads: HTTP ${r.status}`); return r.json(); }).catch(err => { console.error('[Platform] Ads fetch error:', err.message); return []; })
           ]);
           clearTimeout(timeout);
-          if(Array.isArray(news) && news.length > 0) { setArticles(news.map(mapArticleFromDB)); setLoading(false); }
+          if(Array.isArray(news) && news.length > 0) {
+              const mapped = news.map(mapArticleFromDB);
+              setArticles(mapped); setLoading(false);
+              // Batch fetch thumbnails for visible articles (one API call)
+              const ids = mapped.slice(0, 12).map((a: Article) => a.id);
+              fetch(`${API_URL}/articles/thumbnails`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids })
+              }).then(r => r.json()).then(thumbs => {
+                if (thumbs && typeof thumbs === 'object') {
+                  Object.assign(thumbCache, thumbs);
+                  setArticles(prev => [...prev]); // trigger re-render to pick up cache
+                }
+              }).catch(() => {});
+          }
           else if(attempt < 4) setTimeout(() => loadData(attempt + 1), 3000);
           else { setLoading(false); setLoadError(true); }
           if(Array.isArray(activeAds)) setAds(activeAds);
