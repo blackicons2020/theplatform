@@ -658,42 +658,48 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
 
   const launchPaystack = () => {
     if (!client.trim() || !email.trim()) { alert('Please fill in your name and email first.'); return; }
-    const handler = (window as any).PaystackPop?.setup({
-      key: 'pk_live_b2c985a001f4c23b6bd1a19af4193f57c901446c',
-      email,
-      amount: selectedPlan.price * 100, // kobo
-      currency: 'NGN',
-      ref: `TPPAD-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      metadata: { plan: selectedPlan.name, clientName: client },
-      callback: async (response: any) => {
-        setPaying(true);
-        try {
-          const res = await fetch(`${API_URL}/payment/verify-ad`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              reference: response.reference,
-              clientName: client, email,
-              plan: selectedPlan.name, amount: selectedPlan.price,
-              adImage: adImg, adHeadline: headline,
-              adContent: content, adUrl, adContentFile: adDoc
-            })
-          });
-          const data = await res.json();
-          if (res.ok) {
-            alert('✅ Payment confirmed! Your ad has been submitted for review. We will activate it within 24 hours.');
-            onBack();
-          } else {
-            alert(`❌ ${data.message || 'Payment verification failed. Contact support.'}`);
+    const PaystackPop = (window as any).PaystackPop;
+    if (!PaystackPop) { alert('Payment gateway failed to load. Please refresh the page and try again.'); return; }
+    try {
+      const paystack = new PaystackPop();
+      paystack.newTransaction({
+        key: 'pk_live_b2c985a001f4c23b6bd1a19af4193f57c901446c',
+        email,
+        amount: selectedPlan.price * 100, // kobo
+        currency: 'NGN',
+        ref: `TPPAD-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        metadata: { custom_fields: [{ display_name: 'Plan', variable_name: 'plan', value: selectedPlan.name }, { display_name: 'Client', variable_name: 'client', value: client }] },
+        onSuccess: async (transaction: any) => {
+          setPaying(true);
+          try {
+            const res = await fetch(`${API_URL}/payment/verify-ad`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                reference: transaction.reference,
+                clientName: client, email,
+                plan: selectedPlan.name, amount: selectedPlan.price,
+                adImage: adImg, adHeadline: headline,
+                adContent: content, adUrl, adContentFile: adDoc
+              })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert('✅ Payment confirmed! Your ad has been submitted for review. We will activate it within 24 hours.');
+              onBack();
+            } else {
+              alert(`❌ ${data.message || 'Payment verification failed. Contact support.'}`);
+            }
+          } catch {
+            alert('Network error during verification. Please contact support with your payment reference: ' + transaction.reference);
           }
-        } catch {
-          alert('Network error during verification. Please contact support with your payment reference: ' + response.reference);
-        }
-        setPaying(false);
-      },
-      onClose: () => {}
-    });
-    handler?.openIframe();
+          setPaying(false);
+        },
+        onCancel: () => { alert('Payment was cancelled.'); }
+      });
+    } catch (err) {
+      alert('Could not open payment window. Please refresh and try again.');
+    }
   };
 
   return (
