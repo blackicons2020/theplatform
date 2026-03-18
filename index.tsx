@@ -102,8 +102,8 @@ function Header({ onNavigate, toggleTheme, isDark, activeAd }: any) {
 function ArticleCard({ article, onClick }: any) {
   return (
     <div onClick={onClick} className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer border border-gray-100 dark:border-gray-700 flex flex-col h-full">
-      <div className="relative h-48 w-full overflow-hidden shrink-0">
-        <img src={article.image || 'https://via.placeholder.com/400'} className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500" />
+      <div className="relative h-48 w-full overflow-hidden shrink-0 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600">
+        {article.image ? <img src={article.image} className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500" /> : <div className="w-full h-full flex items-center justify-center"><Globe className="w-10 h-10 text-gray-400 dark:text-gray-500"/></div>}
         {article.isBreaking && <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Breaking</span>}
       </div>
       <div className="p-4 flex flex-col flex-grow">
@@ -606,6 +606,117 @@ function StaffLoginPage({ onLogin, onBack }: any) {
 }
 
 // --- Main App Component ---
+
+function ArticleReader({ article, allArticles, onBack, onNavigateToArticle, isAdmin }: any) {
+  const [fullArticle, setFullArticle] = useState<Article | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentForm, setCommentForm] = useState({ author: '', email: '', content: '' });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    setLoading(true);
+    fetch(`${API_URL}/articles/${article.id}`)
+      .then(r => { if(!r.ok) throw new Error('Not found'); return r.json(); })
+      .then(data => { setFullArticle(mapArticleFromDB(data)); setLoading(false); })
+      .catch(() => { setFullArticle(article); setLoading(false); });
+    fetch(`${API_URL}/articles/${article.id}/comments`)
+      .then(r => r.json())
+      .then(data => { if(Array.isArray(data)) setComments(data); })
+      .catch(() => {});
+  }, [article.id]);
+
+  const submitComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const res = await fetch(`${API_URL}/comments`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ articleId: article.id, ...commentForm })
+    });
+    if (res.ok) {
+      const saved = await res.json();
+      setComments([saved, ...comments]);
+      setCommentForm({ author: '', email: '', content: '' });
+    }
+  };
+
+  const display = fullArticle || article;
+  const related = allArticles.filter((a: Article) => a.id !== article.id && a.category === article.category).slice(0, 3);
+
+  if (loading) return (
+    <div className="max-w-4xl mx-auto px-4 py-12 text-center">
+      <RefreshCw className="animate-spin text-green-600 w-8 h-8 mx-auto mb-3" />
+      <p className="text-gray-500 text-sm">Loading article...</p>
+    </div>
+  );
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <button onClick={onBack} className="mb-6 flex items-center text-gray-500 text-sm hover:text-naija"><ChevronRight className="w-4 h-4 rotate-180" /> Back to Home</button>
+      {display.image && (
+        <div className="relative h-[400px] rounded-xl overflow-hidden mb-6">
+          <img src={display.image} className="w-full h-full object-cover object-center" />
+          {display.isBreaking && <span className="absolute top-4 left-4 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse">Breaking News</span>}
+        </div>
+      )}
+      <div className="mb-6">
+        <span className="bg-naija text-white text-xs font-bold px-2 py-1 rounded uppercase">{display.category}</span>
+        <h1 className="text-3xl md:text-4xl font-serif font-bold mt-3 mb-2 dark:text-white">{display.title}</h1>
+        {display.subHeadline && <p className="text-lg text-gray-600 dark:text-gray-400 mb-3">{display.subHeadline}</p>}
+        <div className="flex items-center gap-4 text-sm text-gray-500">
+          <span className="flex items-center gap-1"><User className="w-4 h-4" /> {display.author}</span>
+          <span>{display.date}</span>
+        </div>
+      </div>
+      <div className="flex gap-2 mb-6">
+        {['facebook', 'twitter', 'whatsapp', 'linkedin'].map(p => (
+          <button key={p} onClick={() => handleSocialShare(p, display.title)} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-naija hover:text-white transition-colors">
+            {p === 'facebook' && <Facebook className="w-4 h-4" />}
+            {p === 'twitter' && <Twitter className="w-4 h-4" />}
+            {p === 'whatsapp' && <MessageSquare className="w-4 h-4" />}
+            {p === 'linkedin' && <Linkedin className="w-4 h-4" />}
+          </button>
+        ))}
+      </div>
+      <article className="prose dark:prose-invert max-w-none mb-12 text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-line">
+        {display.content || display.excerpt}
+      </article>
+      <div className="border-t dark:border-gray-700 pt-8 mb-12">
+        <h3 className="text-xl font-bold dark:text-white mb-6 flex items-center gap-2"><MessageSquare className="w-5 h-5" /> Comments ({comments.length})</h3>
+        <form onSubmit={submitComment} className="mb-8 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <input required placeholder="Name" value={commentForm.author} onChange={e => setCommentForm({...commentForm, author: e.target.value})} className="p-3 border rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white outline-none text-sm" />
+            <input required type="email" placeholder="Email" value={commentForm.email} onChange={e => setCommentForm({...commentForm, email: e.target.value})} className="p-3 border rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white outline-none text-sm" />
+          </div>
+          <textarea required placeholder="Write a comment..." value={commentForm.content} onChange={e => setCommentForm({...commentForm, content: e.target.value})} className="w-full p-3 border rounded-lg h-24 dark:bg-gray-800 dark:border-gray-700 dark:text-white outline-none text-sm resize-none" />
+          <button className="bg-naija text-white px-6 py-2 rounded-lg text-sm font-medium flex items-center gap-2"><Send className="w-4 h-4" /> Post Comment</button>
+        </form>
+        {comments.map((c: any) => (
+          <div key={c._id || c.id} className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <div className="flex justify-between items-center mb-2">
+              <span className="font-bold text-sm dark:text-white">{c.author}</span>
+              <span className="text-xs text-gray-400">{new Date(c.date).toLocaleDateString()}</span>
+            </div>
+            <p className="text-sm text-gray-700 dark:text-gray-300">{c.content}</p>
+          </div>
+        ))}
+      </div>
+      {related.length > 0 && (
+        <div className="border-t dark:border-gray-700 pt-8">
+          <h3 className="text-xl font-bold dark:text-white mb-6">Related Stories</h3>
+          <div className="grid md:grid-cols-3 gap-6">
+            {related.map((a: Article) => (
+              <div key={a.id} onClick={() => onNavigateToArticle(a)} className="cursor-pointer group">
+                <h4 className="font-bold text-sm dark:text-white group-hover:text-naija line-clamp-2">{a.title}</h4>
+                <p className="text-xs text-gray-500 mt-1">{a.date}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function App() {
   const [view, setView] = useState('home');
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
@@ -751,8 +862,8 @@ function App() {
                 {filtered.length > 0 && (
                     <div className="mb-12 grid lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-2 cursor-pointer group" onClick={()=> {setSelectedArticle(filtered[0]); setView('article');}}>
-                            <div className="relative h-[400px] rounded-xl overflow-hidden mb-4">
-                                <img src={filtered[0].image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 object-center" />
+                            <div className="relative h-[400px] rounded-xl overflow-hidden mb-4 bg-gradient-to-br from-green-600 to-green-800">
+                                {filtered[0].image ? <img src={filtered[0].image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 object-center" /> : <div className="w-full h-full flex items-center justify-center"><Globe className="w-16 h-16 text-white/30"/></div>}
                                 {filtered[0].isBreaking && <span className="absolute top-4 left-4 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse">Breaking News</span>}
                             </div>
                             <div className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
