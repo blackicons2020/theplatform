@@ -326,7 +326,7 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
   const [showAuthor, setShowAuthor] = useState(true);
   const [breaking, setBreaking] = useState(false);
   const [editingAd, setEditingAd] = useState<any>(null);
-  const [adForm, setAdForm] = useState({ clientName: '', email: '', plan: '', amount: '', adHeadline: '', adContent: '', adUrl: '', status: '' });
+  const [adForm, setAdForm] = useState({ clientName: '', email: '', plan: '', amount: '', adHeadline: '', adContent: '', adUrl: '', status: '', adImage: '' });
   const [showPostAd, setShowPostAd] = useState(false);
   const [postAdForm, setPostAdForm] = useState({ clientName: '', email: '', plan: 'Homepage Banner', amount: '', adHeadline: '', adContent: '', adUrl: '', adImage: '' });
   const [postAdPosting, setPostAdPosting] = useState(false);
@@ -474,7 +474,7 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
                     </>
                   )}
                   {a.status === 'active' && <span className="text-green-600 font-bold text-xs flex items-center gap-1"><CheckCircle className="w-3 h-3"/> Active</span>}
-                  <button onClick={()=>{ setEditingAd(a); setAdForm({ clientName: a.clientName||'', email: a.email||'', plan: a.plan||'', amount: a.amount||'', adHeadline: a.adHeadline||'', adContent: a.adContent||'', adUrl: a.adUrl||'', status: a.status||'pending' }); }} className="ml-auto bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1"><Edit2 className="w-3 h-3"/> Edit</button>
+                  <button onClick={()=>{ setEditingAd(a); setAdForm({ clientName: a.clientName||'', email: a.email||'', plan: a.plan||'', amount: a.amount||'', adHeadline: a.adHeadline||'', adContent: a.adContent||'', adUrl: a.adUrl||'', status: a.status||'pending', adImage: a.adImage||'' }); }} className="ml-auto bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1"><Edit2 className="w-3 h-3"/> Edit</button>
                   <button onClick={()=>{ if(confirm('Delete this ad?')) onDeleteAd(a.id); }} className="bg-red-600 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1"><Trash2 className="w-3 h-3"/> Delete</button>
                 </div>
               </div>
@@ -509,6 +509,11 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
                     <div><label className="text-xs font-bold text-gray-500">Ad Headline</label><input value={adForm.adHeadline} onChange={e=>setAdForm({...adForm, adHeadline:e.target.value})} className="w-full border rounded p-2 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white mt-1" /></div>
                     <div><label className="text-xs font-bold text-gray-500">Ad Content / Message</label><textarea value={adForm.adContent} onChange={e=>setAdForm({...adForm, adContent:e.target.value})} rows={3} className="w-full border rounded p-2 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white mt-1 resize-none" /></div>
                     <div><label className="text-xs font-bold text-gray-500">Destination URL</label><input value={adForm.adUrl} onChange={e=>setAdForm({...adForm, adUrl:e.target.value})} className="w-full border rounded p-2 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white mt-1" /></div>
+                    <div>
+                      <label className="text-xs font-bold text-gray-500">Ad Image</label>
+                      {adForm.adImage && <img src={adForm.adImage} className="mt-1 h-20 object-cover rounded border w-full" />}
+                      <input type="file" accept="image/*" onChange={async e=>{ if(e.target.files?.[0]) { const r = await compressImage(e.target.files[0]); setAdForm({...adForm, adImage: r}); }}} className="w-full text-xs mt-1 dark:text-gray-400" />
+                    </div>
                   </div>
                   <div className="flex gap-3 mt-5">
                     <button onClick={()=>setEditingAd(null)} className="flex-1 border dark:border-gray-700 py-2 rounded text-sm dark:text-white">Cancel</button>
