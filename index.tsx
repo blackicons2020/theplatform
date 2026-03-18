@@ -430,7 +430,7 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
                 {articles.map((a:any) => (
                     <div key={a.id} className="bg-white dark:bg-gray-800 p-3 rounded shadow flex justify-between items-center">
                         <div className="flex gap-3 items-center">
-                            <img src={a.image} className="w-10 h-10 rounded object-cover" />
+                            <img src={`${API_URL}/articles/${a.id}/image`} className="w-10 h-10 rounded object-cover bg-gray-100" />
                             <div><h4 className="font-bold text-sm dark:text-white line-clamp-1">{a.title}</h4><span className="text-xs text-gray-500">{a.date}</span></div>
                         </div>
                         <div className="flex gap-2">
