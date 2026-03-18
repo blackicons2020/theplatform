@@ -11,7 +11,7 @@ import {
 
 // --- Configuration ---
 // ✅ LIVE BACKEND URL
-const API_URL = "https://theplatformserver.onrender.com/api";
+const API_URL = "https://theplatformserver.vercel.app/api";
 // ✅ LIVE FRONTEND URL (For sharing links)
 const APP_URL = window.location.origin; 
 
