@@ -87,7 +87,7 @@ const toSlug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').
 
 const handleSocialShare = (platform: string, title: string, articleId?: string) => {
     const articleUrl = articleId ? `${APP_URL}/article/${articleId}/${toSlug(title)}` : APP_URL;
-    const text = encodeURIComponent(`Read this on The Platform: ${title}`);
+    const text = encodeURIComponent(`Read this on The People's Platform: ${title}`);
     const url = encodeURIComponent(articleUrl);
     let link = '';
     if(platform === 'facebook') link = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
@@ -156,7 +156,7 @@ function Header({ onNavigate, toggleTheme, isDark, activeAd }: any) {
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => onNavigate('home')}>
           <div className="w-8 h-8 bg-naija rounded-full flex items-center justify-center text-white font-bold"><Globe className="w-5 h-5"/></div>
-          <h1 className="font-sans text-lg font-bold text-gray-900 dark:text-white">The Platform</h1>
+          <h1 className="font-sans text-lg font-bold text-gray-900 dark:text-white">The People's Platform</h1>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
@@ -218,7 +218,7 @@ function Footer({ onNavigate, onCategorySelect }: any) {
           <div className="col-span-1">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 bg-naija rounded-full flex items-center justify-center text-white font-bold"><Globe className="w-5 h-5"/></div>
-              <h2 className="font-bold text-lg">The Platform</h2>
+              <h2 className="font-bold text-lg">The People's Platform</h2>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">Empowering voices through unbiased reporting.</p>
           </div>
@@ -244,7 +244,7 @@ function Footer({ onNavigate, onCategorySelect }: any) {
             </div>
           </div>
         </div>
-        <div className="text-center text-xs text-gray-400">&copy; {currentYear} The Platform. All rights reserved.</div>
+        <div className="text-center text-xs text-gray-400">&copy; {currentYear} The People's Platform. All rights reserved.</div>
       </div>
     </footer>
   );
@@ -394,7 +394,7 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
   const submit = (e: any) => {
     e.preventDefault();
     const payload: any = { ...form, isBreaking: breaking, status: 'published' };
-    if(!showAuthor) payload.author = "The Platform";
+    if(!showAuthor) payload.author = "The People's Platform";
     if(editId) { onUpdate(editId, payload); alert('Updated!'); setEditId(null); }
     else { onPublish(payload); alert('Published!'); }
     setForm({ title: '', subHeadline: '', category: 'Politics', author: 'Staff Reporter', content: '', image: '' });
@@ -707,7 +707,7 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
       <button onClick={onBack} className="mb-6 flex items-center text-gray-600 dark:text-gray-400 text-sm"><ChevronRight className="w-4 h-4 rotate-180" /> Back</button>
 
       <div className="text-center mb-12">
-        <h2 className="text-3xl font-serif font-bold text-gray-900 dark:text-white mb-4">Advertise with The Platform</h2>
+        <h2 className="text-3xl font-serif font-bold text-gray-900 dark:text-white mb-4">Advertise with The People's Platform</h2>
         <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">Reach millions of Nigerians daily. Choose the plan that fits your brand.</p>
       </div>
 
@@ -937,7 +937,7 @@ function ArticleReader({ article, allArticles, activeAds = [], onBack, onNavigat
       ) : (
         <div className="mb-10 h-32 bg-gray-50 dark:bg-gray-800 border-2 border-dashed dark:border-gray-700 flex flex-col items-center justify-center text-center p-4 rounded-xl">
           <span className="text-sm font-bold text-gray-400">Ad Space Available</span>
-          <span className="text-xs text-gray-400 mt-1">Advertise on The Platform</span>
+          <span className="text-xs text-gray-400 mt-1">Advertise on The People's Platform</span>
         </div>
       )}
 
@@ -1038,7 +1038,7 @@ function App() {
     const link = document.createElement('link'); link.rel='icon'; 
     link.href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23008753' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><line x1='2' y1='12' x2='22' y2='12'></line><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z'></path></svg>";
     document.head.appendChild(link);
-    document.title = "The Platform";
+    document.title = "The People's Platform";
     loadData();
 
     // Handle browser back/forward
@@ -1147,7 +1147,7 @@ function App() {
     }
   };
 
-  if(loading) return <div className="min-h-screen flex flex-col items-center justify-center gap-3"><RefreshCw className="animate-spin text-green-600 w-8 h-8"/><p className="text-gray-500 text-sm">Loading The Platform...</p><p className="text-gray-400 text-xs">Waking up server, please wait...</p></div>;
+  if(loading) return <div className="min-h-screen flex flex-col items-center justify-center gap-3"><RefreshCw className="animate-spin text-green-600 w-8 h-8"/><p className="text-gray-500 text-sm">Loading The People's Platform...</p><p className="text-gray-400 text-xs">Waking up server, please wait...</p></div>;
   if(loadError && articles.length === 0) return <div className="min-h-screen flex flex-col items-center justify-center gap-3 p-4 text-center"><AlertCircle className="text-red-500 w-10 h-10"/><p className="text-gray-700 dark:text-gray-300 text-sm font-semibold">Could not load news data</p><p className="text-gray-400 text-xs">The server may be starting up. Please try again.</p><button onClick={()=>{ setLoading(true); loadData(); }} className="mt-3 bg-naija text-white px-6 py-2 rounded-full text-sm font-medium">Retry</button></div>;
   if(view === 'login') return <StaffLoginPage onLogin={handleAdminLogin} onBack={()=>setView('home')}/>;
   if(view === 'support') return <SupportPage onBack={()=>setView('home')}/>;
