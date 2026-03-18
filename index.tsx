@@ -629,13 +629,15 @@ function App() {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 45000);
             const [news, activeAds] = await Promise.all([
-                fetch(`${API_URL}/articles`, { signal: controller.signal }).then(r => { if(!r.ok) throw new Error('fetch failed'); return r.json(); }),
-                fetch(`${API_URL}/ads/active`, { signal: controller.signal }).then(r => { if(!r.ok) throw new Error('fetch failed'); return r.json(); })
+                fetch(`${API_URL}/articles`, { signal: controller.signal }).then(r => { if(!r.ok) throw new Error('fetch failed'); return r.json(); }).catch(() => []),
+                fetch(`${API_URL}/ads/active`, { signal: controller.signal }).then(r => { if(!r.ok) throw new Error('fetch failed'); return r.json(); }).catch(() => [])
             ]);
             clearTimeout(timeout);
-            if(Array.isArray(news)) setArticles(news.map(mapArticleFromDB));
+            if(Array.isArray(news) && news.length > 0) setArticles(news.map(mapArticleFromDB));
             if(Array.isArray(activeAds)) setAds(activeAds);
-            setLoading(false);
+            if(Array.isArray(news) && news.length > 0) setLoading(false);
+            else if(attempt < 3) setTimeout(() => loadData(attempt + 1), 10000);
+            else setLoading(false);
         } catch(e) {
             console.error(`Load attempt ${attempt} failed:`, e);
             if(attempt < 3) {
