@@ -253,9 +253,6 @@ function Footer({ onNavigate, onCategorySelect }: any) {
 function SupportPage({ onBack }: any) {
     const [form, setForm] = useState({name:'', email:'', subject:'General Inquiry', message:''});
     const [status, setStatus] = useState('');
-    const [replyEmail, setReplyEmail] = useState('');
-    const [replies, setReplies] = useState<SupportMsg[]>([]);
-    const [showReplies, setShowReplies] = useState(false);
 
     useEffect(() => { window.scrollTo(0,0); }, []);
 
@@ -269,18 +266,11 @@ function SupportPage({ onBack }: any) {
         else setStatus('error');
     };
 
-    const checkReplies = async (e:React.FormEvent) => {
-        e.preventDefault();
-        if(!replyEmail) return;
-        const res = await fetch(`${API_URL}/support/replies?email=${encodeURIComponent(replyEmail)}`);
-        if(res.ok) { const data = await res.json(); setReplies(Array.isArray(data) ? data : []); setShowReplies(true); }
-    };
-
     return (
         <div className="max-w-4xl mx-auto px-4 py-12">
             <button onClick={onBack} className="flex items-center gap-1 text-gray-500 mb-8 text-sm hover:text-naija"><ChevronRight className="w-4 h-4 rotate-180"/> Back to Home</button>
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">Support & Contact</h2>
-            <div className="grid md:grid-cols-2 gap-12">
+            <div className="max-w-lg mx-auto">
                 <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Send Message</h3>
                     <form onSubmit={submit} className="space-y-4">
@@ -295,32 +285,6 @@ function SupportPage({ onBack }: any) {
                         </button>
                         {status==='success' && <p className="text-green-600 text-center text-sm">Message sent successfully! We'll respond soon.</p>}
                     </form>
-                </div>
-                <div>
-                    <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Check Replies</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Enter the email you used to send a message to view admin responses.</p>
-                        <form onSubmit={checkReplies} className="space-y-3">
-                            <input required type="email" placeholder="Your email address" value={replyEmail} onChange={e=>setReplyEmail(e.target.value)} className="w-full p-3 rounded-lg border dark:bg-gray-900 dark:text-white outline-none" />
-                            <button className="w-full bg-naija text-white font-bold py-3 rounded-lg text-sm">Check Replies</button>
-                        </form>
-                    </div>
-                    {showReplies && (
-                        <div className="mt-6 space-y-4">
-                            {replies.length === 0 ? (
-                                <p className="text-gray-500 text-sm text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">No replies yet. Please check back later.</p>
-                            ) : replies.map((msg: any) => (
-                                <div key={msg.id || msg._id} className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow border dark:border-gray-700">
-                                    <p className="text-xs text-gray-500 mb-1">{msg.subject} &middot; {new Date(msg.date).toLocaleDateString()}</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 bg-gray-50 dark:bg-gray-900 p-2 rounded">{msg.message}</p>
-                                    <div className="border-l-4 border-naija pl-3">
-                                        <p className="text-xs font-bold text-naija mb-1">Admin Reply &middot; {msg.replyDate ? new Date(msg.replyDate).toLocaleDateString() : ''}</p>
-                                        <p className="text-sm text-gray-800 dark:text-gray-200">{msg.reply}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
                 </div>
             </div>
         </div>
