@@ -1259,7 +1259,7 @@ function App() {
                                 </div>
                             </div>
                             {(() => {
-                              const sAd = activeAds.find((a: any) => a.plan === 'Article Page Ad' || a.plan === 'Sidebar Banner');
+                              const sAd = activeAds.find((a: any) => a.plan === 'Homepage Banner' || a.plan === 'Article Page Ad' || a.plan === 'Sidebar Banner' || a.plan === 'Header Leaderboard');
                               return sAd ? (
                                 <a href={sAd.adUrl || '#'} target="_blank" rel="noopener noreferrer" className="block rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                                   {sAd.adImage && <img src={sAd.adImage} className="w-full h-40 object-cover" />}
@@ -1280,26 +1280,6 @@ function App() {
                         </div>
                     </div>
                 )}
-
-                {/* Homepage Banner Ad */}
-                {(() => {
-                  const hAd = activeAds.find((a: any) => a.plan === 'Homepage Banner' || a.plan === 'Header Leaderboard');
-                  return hAd ? (
-                    <a href={hAd.adUrl || '#'} target="_blank" rel="noopener noreferrer"
-                      className="flex mb-8 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow">
-                      {hAd.adImage && (
-                        <div className="w-44 shrink-0"><img src={hAd.adImage} className="w-full h-full object-cover" /></div>
-                      )}
-                      <div className="flex-1 p-5 flex flex-col justify-center gap-1">
-                        <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Sponsored</span>
-                        {hAd.adHeadline && <h4 className="font-bold text-xl text-gray-900 dark:text-white leading-snug">{hAd.adHeadline}</h4>}
-                        {hAd.adContent && <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 line-clamp-3">{hAd.adContent}</p>}
-                        <span className="mt-3 text-naija text-sm font-bold">Learn More →</span>
-                      </div>
-                      <span className="self-start m-2 text-[10px] text-gray-300 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">Ad</span>
-                    </a>
-                  ) : null;
-                })()}
 
                 <h3 className="text-2xl font-serif font-bold mb-6 dark:text-white flex items-center gap-2"><LayoutGrid className="w-6 h-6"/> Latest Stories</h3>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
