@@ -501,8 +501,8 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 mb-3">
-                  <div><p className="text-[10px] font-bold dark:text-gray-300">Receipt</p>{a.receiptImage && <img src={a.receiptImage} className="h-24 object-cover border w-full" />}</div>
-                  <div><p className="text-[10px] font-bold dark:text-gray-300">Ad Creative</p>{a.adImage && <img src={a.adImage} className="h-24 object-cover border w-full" />}</div>
+                  <div><p className="text-[10px] font-bold dark:text-gray-300">Ad Creative</p>{a.adImage && <img src={a.adImage} className="h-24 object-cover border w-full rounded" />}</div>
+                  {a.paymentReference && <div><p className="text-[10px] font-bold dark:text-gray-300">Payment Ref</p><p className="text-xs text-green-600 font-mono break-all mt-1">{a.paymentReference}</p></div>}
                 </div>
 
                 <div className="flex flex-wrap gap-2">
@@ -625,51 +625,75 @@ function SubmitNewsPage({ onBack, onSubmit }: any) {
   );
 }
 
-// --- AdvertisePage Component (FIXED) ---
+// --- AdvertisePage Component ---
 function AdvertisePage({ onBack, onSubmitAd }: any) {
-  const [showModal, setShowModal] = useState(false);
-  const [step, setStep] = useState<'info' | 'form'>('info');
-  const [selectedPlan, setSelectedPlan] = useState<any>(null); // Store whole plan object
-  
-  // Form State
+  const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [paying, setPaying] = useState(false);
+
+  // Ad detail form state
   const [client, setClient] = useState('');
   const [email, setEmail] = useState('');
   const [headline, setHeadline] = useState('');
   const [content, setContent] = useState('');
-  const [receipt, setReceipt] = useState('');
+  const [adUrl, setAdUrl] = useState('');
   const [adImg, setAdImg] = useState('');
-  const [adDoc, setAdDoc] = useState(''); 
+  const [adDoc, setAdDoc] = useState('');
 
-  useEffect(() => { window.scrollTo(0,0); }, []);
+  useEffect(() => { window.scrollTo(0, 0); }, []);
 
   const plans = [
-    { name: 'Sidebar Banner', price: 20000, features: ['Visible on all article pages', 'Square format', 'Weekly rotation'] },
-    { name: 'Sponsored Article', price: 70000, features: ['Full feature story', 'Permanent link', 'Shared on social media', 'In-feed native display'] },
-    { name: 'Header Leaderboard', price: 150000, features: ['Premium top placement', 'High visibility', 'Monthly duration', 'All pages'] },
+    { name: 'Sidebar Banner',      price: 20000,  features: ['Visible on all article pages', 'Square format', 'Weekly rotation'] },
+    { name: 'Sponsored Article',   price: 70000,  features: ['Full feature story', 'Permanent link', 'Shared on social media', 'In-feed native display'] },
+    { name: 'Header Leaderboard',  price: 150000, features: ['Premium top placement', 'High visibility', 'Monthly duration', 'All pages'] },
   ];
 
   const handleFile = async (e: any, setter: any) => {
-    if(e.target.files?.[0]) {
+    if (e.target.files?.[0]) {
       const file = e.target.files[0];
       const result = file.type.startsWith('image/') ? await compressImage(file) : await readFileAsDataURL(file);
       setter(result);
     }
   };
 
-  const handleSubmit = (e: any) => {
-    e.preventDefault();
-    if(!selectedPlan || !receipt) return;
-    onSubmitAd({
-      clientName: client, email, plan: selectedPlan.name, amount: selectedPlan.price,
-      receiptImage: receipt, adImage: adImg, adHeadline: headline, adContent: content, adContentFile: adDoc
+  const launchPaystack = () => {
+    if (!client.trim() || !email.trim()) { alert('Please fill in your name and email first.'); return; }
+    const handler = (window as any).PaystackPop?.setup({
+      key: 'pk_live_b2c985a001f4c23b6bd1a19af4193f57c901446c',
+      email,
+      amount: selectedPlan.price * 100, // kobo
+      currency: 'NGN',
+      ref: `TPPAD-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      metadata: { plan: selectedPlan.name, clientName: client },
+      callback: async (response: any) => {
+        setPaying(true);
+        try {
+          const res = await fetch(`${API_URL}/payment/verify-ad`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              reference: response.reference,
+              clientName: client, email,
+              plan: selectedPlan.name, amount: selectedPlan.price,
+              adImage: adImg, adHeadline: headline,
+              adContent: content, adUrl, adContentFile: adDoc
+            })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            alert('✅ Payment confirmed! Your ad has been submitted for review. We will activate it within 24 hours.');
+            onBack();
+          } else {
+            alert(`❌ ${data.message || 'Payment verification failed. Contact support.'}`);
+          }
+        } catch {
+          alert('Network error during verification. Please contact support with your payment reference: ' + response.reference);
+        }
+        setPaying(false);
+      },
+      onClose: () => {}
     });
-    setShowModal(false);
-  };
-
-  const handlePlanSelect = (p: any) => {
-    setSelectedPlan(p);
-    setStep('info');
-    setShowModal(true);
+    handler?.openIframe();
   };
 
   return (
@@ -681,78 +705,88 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
         <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">Reach millions of Nigerians daily. Choose the plan that fits your brand.</p>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-8">
-        {plans.map((p) => (
-          <div key={p.name} className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border dark:border-gray-700 text-center flex flex-col h-full">
-            <h3 className="font-bold text-xl text-gray-900 dark:text-white mb-2">{p.name}</h3>
-            <p className="text-3xl font-bold text-naija">₦{p.price.toLocaleString()}</p>
-            <div className="flex-grow text-left space-y-2 mb-4">
-              {p.features.map((feature, idx) => (
-                <div key={idx} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
-                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
-                  <span>{feature}</span>
-                </div>
-              ))}
-            </div>
-            <div className="p-6 pt-0">
-              <button 
-                onClick={() => handlePlanSelect(p)}
-                className="w-full bg-black text-white py-2 rounded-lg text-sm mt-auto"
-              >
+      {/* Plan Cards */}
+      {!showForm && (
+        <div className="grid md:grid-cols-3 gap-8 mb-8">
+          {plans.map((p) => (
+            <div key={p.name} className={`bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-2 flex flex-col transition-all ${selectedPlan?.name === p.name ? 'border-naija scale-[1.02]' : 'border-gray-100 dark:border-gray-700'}`}>
+              <h3 className="font-bold text-xl text-gray-900 dark:text-white mb-1">{p.name}</h3>
+              <p className="text-3xl font-bold text-naija mb-4">₦{p.price.toLocaleString()}</p>
+              <div className="flex-grow space-y-2 mb-6">
+                {p.features.map((f, i) => (
+                  <div key={i} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-green-500 shrink-0 mt-0.5" /><span>{f}</span>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => { setSelectedPlan(p); setShowForm(true); }} className="w-full bg-black dark:bg-naija text-white py-2.5 rounded-lg text-sm font-bold hover:bg-naija transition-colors">
                 Choose Plan
               </button>
             </div>
+          ))}
+        </div>
+      )}
+
+      {/* Ad Details + Payment Form */}
+      {showForm && selectedPlan && (
+        <div className="max-w-lg mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg border dark:border-gray-700 overflow-hidden">
+          <div className="bg-naija text-white px-6 py-4 flex justify-between items-center">
+            <div>
+              <p className="text-sm font-bold">{selectedPlan.name}</p>
+              <p className="text-2xl font-bold">₦{selectedPlan.price.toLocaleString()}</p>
+            </div>
+            <button onClick={() => setShowForm(false)} className="text-white/70 hover:text-white"><X className="w-5 h-5" /></button>
           </div>
-        ))}
-      </div>
 
-      {/* Payment Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl w-full max-w-xs max-h-[70vh] overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col">
-            <div className="p-3 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800 shrink-0">
-              <h3 className="font-bold text-sm dark:text-white">{step === 'info' ? 'Payment Details' : 'Submit Ad Details'}</h3>
-              <button onClick={() => setShowModal(false)}><X className="w-4 h-4 text-gray-500" /></button>
+          <div className="p-6 space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 block mb-1">Your Name / Business *</label>
+                <input required value={client} onChange={e => setClient(e.target.value)} placeholder="e.g. Dangote Group" className="w-full p-2.5 text-sm border rounded-lg dark:bg-gray-900 dark:border-gray-700 dark:text-white outline-none focus:border-naija" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 block mb-1">Email Address *</label>
+                <input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" className="w-full p-2.5 text-sm border rounded-lg dark:bg-gray-900 dark:border-gray-700 dark:text-white outline-none focus:border-naija" />
+              </div>
             </div>
-            
-            <div className="p-4 overflow-y-auto">
-              {step === 'info' ? (
-                <div className="text-center space-y-3">
-                  <div className="bg-green-50 dark:bg-gray-800 p-3 rounded-lg border border-green-100 dark:border-gray-600">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Pay <span className="font-bold text-black dark:text-white">₦{selectedPlan?.price?.toLocaleString() || '0'}</span> to:</p>
-                    <p className="font-bold text-sm text-naija mt-1">4092144856</p>
-                    <p className="text-xs font-bold text-gray-700 dark:text-gray-300">Polaris Bank</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Clean Connect</p>
-                  </div>
-                  <button onClick={() => setStep('form')} className="w-full bg-naija text-white py-2 rounded text-xs font-bold flex items-center justify-center gap-2">I Have Made Payment <ArrowRight className="w-3 h-3"/></button>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-3">
-                  <input required placeholder="Name / Business" value={client} onChange={e => setClient(e.target.value)} className="w-full p-2 text-xs border rounded dark:bg-gray-800 dark:border-gray-700 dark:text-white outline-none focus:border-naija" />
-                  <input required type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 text-xs border rounded dark:bg-gray-800 dark:border-gray-700 dark:text-white outline-none focus:border-naija" />
-                  
-                  <input placeholder="Headline (Optional)" value={headline} onChange={e => setHeadline(e.target.value)} className="w-full p-2 text-xs border rounded dark:bg-gray-800 dark:border-gray-700 dark:text-white outline-none focus:border-naija" />
-                  <textarea placeholder="Ad Content (Optional)" value={content} onChange={e => setContent(e.target.value)} className="w-full p-2 text-xs border rounded h-16 dark:bg-gray-800 dark:border-gray-700 dark:text-white resize-none outline-none focus:border-naija" />
-                  
-                  <div className="text-xs">
-                    <label className="block mb-1 font-bold dark:text-gray-300 flex items-center gap-1"><Upload className="w-3 h-3"/> Upload Material (Doc/PDF)</label>
-                    <input type="file" onChange={e => handleFile(e, setAdDoc)} className="w-full text-[10px] dark:text-gray-400" />
-                  </div>
 
-                  <div className="text-xs border-t pt-2 dark:border-gray-700">
-                    <label className="block mb-1 font-bold dark:text-gray-300">Ad Creative (Image)</label>
-                    <input type="file" required accept="image/*" onChange={e => handleFile(e, setAdImg)} className="w-full text-[10px] dark:text-gray-400" />
-                  </div>
-
-                  <div className="text-xs">
-                    <label className="block mb-1 font-bold dark:text-gray-300">Payment Receipt</label>
-                    <input type="file" required accept="image/*" onChange={e => handleFile(e, setReceipt)} className="w-full text-[10px] dark:text-gray-400" />
-                  </div>
-
-                  <button type="submit" className="w-full bg-naija text-white py-2 rounded text-xs font-bold mt-2 shadow-md hover:bg-green-700">Submit Proof & Creative</button>
-                </form>
-              )}
+            <div>
+              <label className="text-xs font-bold text-gray-500 dark:text-gray-400 block mb-1">Ad Headline</label>
+              <input value={headline} onChange={e => setHeadline(e.target.value)} placeholder="Catchy headline for your ad" className="w-full p-2.5 text-sm border rounded-lg dark:bg-gray-900 dark:border-gray-700 dark:text-white outline-none focus:border-naija" />
             </div>
+
+            <div>
+              <label className="text-xs font-bold text-gray-500 dark:text-gray-400 block mb-1">Ad Message / Content</label>
+              <textarea value={content} onChange={e => setContent(e.target.value)} rows={3} placeholder="Describe your product or offer..." className="w-full p-2.5 text-sm border rounded-lg dark:bg-gray-900 dark:border-gray-700 dark:text-white outline-none focus:border-naija resize-none" />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-gray-500 dark:text-gray-400 block mb-1">Destination URL (optional)</label>
+              <input value={adUrl} onChange={e => setAdUrl(e.target.value)} placeholder="https://yourwebsite.com" className="w-full p-2.5 text-sm border rounded-lg dark:bg-gray-900 dark:border-gray-700 dark:text-white outline-none focus:border-naija" />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-gray-500 dark:text-gray-400 block mb-1">Ad Creative Image *</label>
+              <input type="file" required accept="image/*" onChange={e => handleFile(e, setAdImg)} className="w-full text-xs dark:text-gray-400" />
+              {adImg && <img src={adImg} className="mt-2 h-20 object-cover rounded border w-full" />}
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-gray-500 dark:text-gray-400 block mb-1">Supporting Document (PDF/Doc, optional)</label>
+              <input type="file" onChange={e => handleFile(e, setAdDoc)} className="w-full text-xs dark:text-gray-400" />
+            </div>
+
+            <div className="bg-gray-50 dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-3 text-xs text-gray-500 dark:text-gray-400">
+              🔒 Secure payment powered by <strong>Paystack</strong>. You will be charged <strong className="text-naija">₦{selectedPlan.price.toLocaleString()}</strong> upon clicking Pay Now.
+            </div>
+
+            <button
+              onClick={launchPaystack}
+              disabled={paying || !client.trim() || !email.trim() || !adImg}
+              className="w-full bg-naija text-white py-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-60 hover:bg-green-700 transition-colors"
+            >
+              {paying ? <><RefreshCw className="w-4 h-4 animate-spin" /> Verifying Payment...</> : <><CreditCard className="w-4 h-4" /> Pay ₦{selectedPlan.price.toLocaleString()} Now</>}
+            </button>
           </div>
         </div>
       )}
