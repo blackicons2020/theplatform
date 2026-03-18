@@ -1102,15 +1102,12 @@ function App() {
 
   const toggleTheme = () => { setIsDark(!isDark); document.documentElement.classList.toggle('dark'); };
 
-  // Deep-link: open article if URL matches /article/:id/...
+  // On page load, always start on homepage and reset URL
   useEffect(() => {
-    if (articles.length === 0) return;
-    const m = window.location.pathname.match(/^\/article\/([a-f0-9]+)/i);
-    if (m) {
-      const found = articles.find(a => a.id === m[1]);
-      if (found) { setSelectedArticle(found); setView('article'); }
+    if (window.location.pathname !== '/') {
+      window.history.replaceState({ view: 'home' }, '', '/');
     }
-  }, [articles]);
+  }, []);
 
   // Data Handlers
   const handleAdminLogin = async () => {
