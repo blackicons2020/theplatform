@@ -69,6 +69,22 @@ const handleSocialShare = (platform: string, title: string) => {
 
 // --- Components ---
 
+function LazyImage({ articleId, className, fallbackClass }: { articleId: string; className: string; fallbackClass?: string }) {
+  const [src, setSrc] = useState('');
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API_URL}/articles/${articleId}/image`)
+      .then(r => r.json())
+      .then(data => { if (!cancelled && data.image) { setSrc(data.image); } setLoaded(true); })
+      .catch(() => { if (!cancelled) setLoaded(true); });
+    return () => { cancelled = true; };
+  }, [articleId]);
+  if (!loaded) return <div className={`${fallbackClass || ''} animate-pulse bg-gray-200 dark:bg-gray-700`} />;
+  if (!src) return <div className={fallbackClass || ''}><Globe className="w-10 h-10 text-gray-400 dark:text-gray-500" /></div>;
+  return <img src={src} className={className} />;
+}
+
 function Header({ onNavigate, toggleTheme, isDark, activeAd }: any) {
   return (
     <header className="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
@@ -103,7 +119,7 @@ function ArticleCard({ article, onClick }: any) {
   return (
     <div onClick={onClick} className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer border border-gray-100 dark:border-gray-700 flex flex-col h-full">
       <div className="relative h-48 w-full overflow-hidden shrink-0 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600">
-        {article.image ? <img src={article.image} className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500" /> : <div className="w-full h-full flex items-center justify-center"><Globe className="w-10 h-10 text-gray-400 dark:text-gray-500"/></div>}
+        <LazyImage articleId={article.id} className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500" fallbackClass="w-full h-full flex items-center justify-center" />
         {article.isBreaking && <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Breaking</span>}
       </div>
       <div className="p-4 flex flex-col flex-grow">
@@ -863,7 +879,7 @@ function App() {
                     <div className="mb-12 grid lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-2 cursor-pointer group" onClick={()=> {setSelectedArticle(filtered[0]); setView('article');}}>
                             <div className="relative h-[400px] rounded-xl overflow-hidden mb-4 bg-gradient-to-br from-green-600 to-green-800">
-                                {filtered[0].image ? <img src={filtered[0].image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 object-center" /> : <div className="w-full h-full flex items-center justify-center"><Globe className="w-16 h-16 text-white/30"/></div>}
+                                <LazyImage articleId={filtered[0].id} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 object-center" fallbackClass="w-full h-full flex items-center justify-center" />
                                 {filtered[0].isBreaking && <span className="absolute top-4 left-4 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse">Breaking News</span>}
                             </div>
                             <div className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
