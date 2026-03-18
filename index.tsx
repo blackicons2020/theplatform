@@ -318,7 +318,7 @@ function SupportMsgCard({ msg, onReplied }: { msg: SupportMsg; onReplied: (m: an
   );
 }
 
-function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, onDelete, onApproveSubmission, onRejectSubmission, onApproveAd, onRejectAd, onDeleteAd, onUpdateAd, onLogout }: any) {
+function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, onDelete, onApproveSubmission, onRejectSubmission, onApproveAd, onRejectAd, onDeleteAd, onUpdateAd, onPostAd, onLogout }: any) {
   const [tab, setTab] = useState('live');
   const [editId, setEditId] = useState<string|null>(null);
   const [form, setForm] = useState({ title: '', subHeadline: '', category: 'Politics', author: 'Staff Reporter', content: '', image: '' });
@@ -327,6 +327,9 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
   const [breaking, setBreaking] = useState(false);
   const [editingAd, setEditingAd] = useState<any>(null);
   const [adForm, setAdForm] = useState({ clientName: '', email: '', plan: '', amount: '', adHeadline: '', adContent: '', adUrl: '', status: '' });
+  const [showPostAd, setShowPostAd] = useState(false);
+  const [postAdForm, setPostAdForm] = useState({ clientName: '', email: '', plan: 'Homepage Banner', amount: '', adHeadline: '', adContent: '', adUrl: '', adImage: '' });
+  const [postAdPosting, setPostAdPosting] = useState(false);
 
   useEffect(() => {
       if(tab === 'support') {
@@ -370,7 +373,7 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
       
       <div className="p-4 max-w-5xl mx-auto">
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-            {['live','pending','ads','support','compose'].map(t => (
+            {['live','pending','ads','payments','support','compose'].map(t => (
                 <button key={t} onClick={()=>setTab(t)} className={`px-4 py-2 rounded-full text-xs font-bold uppercase ${tab===t ? 'bg-black text-white' : 'bg-white text-gray-600 border'}`}>
                     {t} {t==='pending' && `(${pendingArticles.length})`} {t==='ads' && `(${ads.filter((a:any)=>a.status==='pending').length})`}
                 </button>
@@ -427,6 +430,12 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
 
         {tab === 'ads' && (
           <div className="space-y-4">
+            {/* Post Ad Button */}
+            <div className="flex justify-between items-center">
+              <p className="text-sm font-bold text-gray-600 dark:text-gray-300">{ads.length} advert(s) total</p>
+              <button onClick={()=>setShowPostAd(true)} className="bg-naija text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2"><PenTool className="w-3 h-3"/> Post Ad Directly</button>
+            </div>
+
             {ads.length === 0 && <p className="text-gray-500 text-sm">No adverts yet.</p>}
             {ads.map((a:any) => (
               <div key={a.id} className="bg-white dark:bg-gray-800 p-4 rounded shadow border-l-4 border-yellow-400">
@@ -474,7 +483,7 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
             {/* Edit Ad Modal */}
             {editingAd && (
               <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={()=>setEditingAd(null)}>
-                <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-lg p-6" onClick={e=>e.stopPropagation()}>
+                <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto" onClick={e=>e.stopPropagation()}>
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="font-bold text-lg dark:text-white">Edit Advert</h3>
                     <button onClick={()=>setEditingAd(null)} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
@@ -508,6 +517,86 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
                 </div>
               </div>
             )}
+
+            {/* Post Ad Directly Modal */}
+            {showPostAd && (
+              <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={()=>setShowPostAd(false)}>
+                <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto" onClick={e=>e.stopPropagation()}>
+                  <div className="flex justify-between items-center mb-4">
+                    <div>
+                      <h3 className="font-bold text-lg dark:text-white">Post Ad Directly</h3>
+                      <p className="text-xs text-gray-400 mt-0.5">Ad goes live immediately — no payment required</p>
+                    </div>
+                    <button onClick={()=>setShowPostAd(false)} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><label className="text-xs font-bold text-gray-500">Client / Brand Name</label><input value={postAdForm.clientName} onChange={e=>setPostAdForm({...postAdForm, clientName:e.target.value})} placeholder="e.g. Dangote Group" className="w-full border rounded p-2 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white mt-1" /></div>
+                      <div><label className="text-xs font-bold text-gray-500">Email (optional)</label><input type="email" value={postAdForm.email} onChange={e=>setPostAdForm({...postAdForm, email:e.target.value})} placeholder="client@email.com" className="w-full border rounded p-2 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white mt-1" /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><label className="text-xs font-bold text-gray-500">Ad Placement *</label>
+                        <select value={postAdForm.plan} onChange={e=>setPostAdForm({...postAdForm, plan:e.target.value})} className="w-full border rounded p-2 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white mt-1">
+                          {['Homepage Banner','Article Page Ad','Sponsored Article'].map(p=><option key={p}>{p}</option>)}
+                        </select>
+                      </div>
+                      <div><label className="text-xs font-bold text-gray-500">Value (₦, optional)</label><input type="number" value={postAdForm.amount} onChange={e=>setPostAdForm({...postAdForm, amount:e.target.value})} placeholder="0" className="w-full border rounded p-2 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white mt-1" /></div>
+                    </div>
+                    <div><label className="text-xs font-bold text-gray-500">Ad Headline *</label><input required value={postAdForm.adHeadline} onChange={e=>setPostAdForm({...postAdForm, adHeadline:e.target.value})} placeholder="Catchy headline" className="w-full border rounded p-2 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white mt-1" /></div>
+                    <div><label className="text-xs font-bold text-gray-500">Ad Message / Content</label><textarea value={postAdForm.adContent} onChange={e=>setPostAdForm({...postAdForm, adContent:e.target.value})} rows={3} placeholder="Ad body text..." className="w-full border rounded p-2 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white mt-1 resize-none" /></div>
+                    <div><label className="text-xs font-bold text-gray-500">Destination URL</label><input value={postAdForm.adUrl} onChange={e=>setPostAdForm({...postAdForm, adUrl:e.target.value})} placeholder="https://..." className="w-full border rounded p-2 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white mt-1" /></div>
+                    <div>
+                      <label className="text-xs font-bold text-gray-500">Ad Creative Image *</label>
+                      <input type="file" accept="image/*" onChange={async e=>{ if(e.target.files?.[0]) { const r = await compressImage(e.target.files[0]); setPostAdForm({...postAdForm, adImage: r}); }}} className="w-full text-xs mt-1 dark:text-gray-400" />
+                      {postAdForm.adImage && <img src={postAdForm.adImage} className="mt-2 h-20 object-cover rounded border w-full" />}
+                    </div>
+                  </div>
+                  <div className="flex gap-3 mt-5">
+                    <button onClick={()=>setShowPostAd(false)} className="flex-1 border dark:border-gray-700 py-2 rounded text-sm dark:text-white">Cancel</button>
+                    <button disabled={postAdPosting || !postAdForm.adHeadline.trim() || !postAdForm.adImage} onClick={async ()=>{
+                      setPostAdPosting(true);
+                      await onPostAd({ ...postAdForm, amount: Number(postAdForm.amount) || 0 });
+                      setPostAdForm({ clientName: '', email: '', plan: 'Homepage Banner', amount: '', adHeadline: '', adContent: '', adUrl: '', adImage: '' });
+                      setShowPostAd(false);
+                      setPostAdPosting(false);
+                    }} className="flex-1 bg-naija text-white py-2 rounded text-sm font-bold disabled:opacity-60">{postAdPosting ? 'Posting...' : 'Post Ad Live'}</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === 'payments' && (
+          <div className="space-y-3">
+            <div className="flex justify-between items-center mb-2">
+              <p className="text-sm font-bold text-gray-600 dark:text-gray-300">All Ad Payments</p>
+              <p className="text-xs text-gray-400">{ads.filter((a:any)=>a.paymentReference).length} paid transaction(s)</p>
+            </div>
+            {ads.filter((a:any)=>a.paymentReference).length === 0 && (
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-8 text-center">
+                <p className="text-gray-400 text-sm">No payment records yet.</p>
+              </div>
+            )}
+            {ads.filter((a:any)=>a.paymentReference).map((a:any) => (
+              <div key={a.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-bold text-sm dark:text-white">{a.clientName}</p>
+                    <p className="text-xs text-gray-500">{a.email}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-green-600 font-mono">₦{(a.amount||0).toLocaleString()}</p>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${a.status === 'active' ? 'bg-green-100 text-green-700' : a.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>{a.status}</span>
+                  </div>
+                </div>
+                <div className="mt-2 pt-2 border-t dark:border-gray-700 grid grid-cols-2 gap-2 text-xs">
+                  <div><span className="text-gray-400">Plan:</span> <span className="dark:text-gray-200 font-medium">{a.plan}</span></div>
+                  <div><span className="text-gray-400">Date:</span> <span className="dark:text-gray-200">{a.dateSubmitted ? new Date(a.dateSubmitted).toLocaleDateString() : 'N/A'}</span></div>
+                  <div className="col-span-2"><span className="text-gray-400">Ref:</span> <span className="font-mono text-green-600 break-all">{a.paymentReference}</span></div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -1102,11 +1191,22 @@ function App() {
     }
   };
 
+  const postAd = async (data: any) => {
+    const res = await fetch(`${API_URL}/admin/ads`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    if (res.ok) {
+      const created = await res.json();
+      setAds([{ ...created, id: created._id || created.id }, ...ads]);
+      alert('Ad posted and is now live!');
+    } else {
+      alert('Failed to post ad. Please try again.');
+    }
+  };
+
   if(loading) return <div className="min-h-screen flex flex-col items-center justify-center gap-3"><RefreshCw className="animate-spin text-green-600 w-8 h-8"/><p className="text-gray-500 text-sm">Loading The People's Platform...</p><p className="text-gray-400 text-xs">Waking up server, please wait...</p></div>;
   if(loadError && articles.length === 0) return <div className="min-h-screen flex flex-col items-center justify-center gap-3 p-4 text-center"><AlertCircle className="text-red-500 w-10 h-10"/><p className="text-gray-700 dark:text-gray-300 text-sm font-semibold">Could not load news data</p><p className="text-gray-400 text-xs">The server may be starting up. Please try again.</p><button onClick={()=>{ setLoading(true); loadData(); }} className="mt-3 bg-naija text-white px-6 py-2 rounded-full text-sm font-medium">Retry</button></div>;
   if(view === 'login') return <StaffLoginPage onLogin={handleAdminLogin} onBack={()=>setView('home')}/>;
   if(view === 'support') return <SupportPage onBack={()=>setView('home')}/>;
-  if(view === 'admin' && isAdmin) return <AdminDashboard articles={articles} pendingArticles={pending} ads={ads} onPublish={publishNews} onUpdate={updateNews} onDelete={deleteNews} onApproveSubmission={approveArticle} onRejectSubmission={(id:string)=>setPending(pending.filter(a=>a.id!==id))} onApproveAd={approveAd} onRejectAd={rejectAd} onDeleteAd={deleteAd} onUpdateAd={updateAd} onLogout={()=>{setIsAdmin(false); setView('home');}} />;
+  if(view === 'admin' && isAdmin) return <AdminDashboard articles={articles} pendingArticles={pending} ads={ads} onPublish={publishNews} onUpdate={updateNews} onDelete={deleteNews} onApproveSubmission={approveArticle} onRejectSubmission={(id:string)=>setPending(pending.filter(a=>a.id!==id))} onApproveAd={approveAd} onRejectAd={rejectAd} onDeleteAd={deleteAd} onUpdateAd={updateAd} onPostAd={postAd} onLogout={()=>{setIsAdmin(false); setView('home');}} />;
 
   const filtered = cat === 'All' ? articles : articles.filter(a => a.category === cat);
   const activeAds = ads.filter(a=>a.status==='Active' || a.status==='active');
