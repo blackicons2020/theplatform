@@ -36,7 +36,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 interface Article { id: string; title: string; subHeadline?: string; category: string; author: string; date: string; image: string; excerpt: string; content: string; views: string; isBreaking?: boolean; status?: string; }
 interface Advertisement { id: string; clientName: string; email: string; plan: string; amount: number; status: string; receiptImage: string; adImage?: string; adContent?: string; adContentFile?: string; adHeadline?: string; }
 interface Comment { id: string; author: string; email: string; content: string; date: string; }
-interface SupportMsg { id: string; name: string; email: string; subject: string; message: string; date: string; }
+interface SupportMsg { id: string; name: string; email: string; subject: string; message: string; date: string; reply?: string; replyDate?: string; }
 
 // --- Utils ---
 const mapArticleFromDB = (dbArticle: any): Article => ({
@@ -82,14 +82,19 @@ const compressImage = (file: File, maxWidth = 1200, quality = 0.6): Promise<stri
 // In-memory thumbnail cache (survives re-renders within the session)
 const thumbCache: Record<string, string> = {};
 
-const handleSocialShare = (platform: string, title: string) => {
+// URL slug helper
+const toSlug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 80);
+
+const handleSocialShare = (platform: string, title: string, articleId?: string) => {
+    const articleUrl = articleId ? `${APP_URL}/article/${articleId}/${toSlug(title)}` : APP_URL;
     const text = encodeURIComponent(`Read this on The Platform: ${title}`);
-    const url = encodeURIComponent(APP_URL);
+    const url = encodeURIComponent(articleUrl);
     let link = '';
     if(platform === 'facebook') link = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
     if(platform === 'twitter') link = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
     if(platform === 'whatsapp') link = `https://wa.me/?text=${text}%20${url}`;
     if(platform === 'linkedin') link = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
+    if(platform === 'copy') { navigator.clipboard.writeText(articleUrl).catch(() => {}); return; }
     if(link) window.open(link, '_blank');
 };
 
@@ -137,9 +142,13 @@ function Header({ onNavigate, toggleTheme, isDark, activeAd }: any) {
   return (
     <header className="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
       {activeAd && (
-        <div className="bg-gray-100 dark:bg-gray-900 w-full h-24 relative flex items-center justify-center overflow-hidden">
-          <a href={activeAd.adUrl || '#'} target="_blank" rel="noreferrer" className="w-full h-full">
-             {activeAd.adImage ? <img src={activeAd.adImage} className="w-full h-full object-cover object-center" /> : <div className="flex items-center justify-center h-full text-gray-400 text-xs">Ad Space</div>}
+        <div className="bg-gray-100 dark:bg-gray-900 w-full h-24 relative flex items-center overflow-hidden">
+          <a href={activeAd.adUrl || '#'} target="_blank" rel="noreferrer" className="w-full h-full flex items-center">
+             {activeAd.adImage && <img src={activeAd.adImage} className="h-full w-auto object-cover object-center shrink-0" />}
+             <div className="flex-1 px-4 min-w-0">
+               {activeAd.adHeadline && <p className="font-bold text-sm text-gray-900 dark:text-white truncate">{activeAd.adHeadline}</p>}
+               {activeAd.adContent && <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mt-0.5">{activeAd.adContent}</p>}
+             </div>
           </a>
           <span className="absolute top-1 right-1 bg-black/50 text-white text-[10px] px-1">Ad</span>
         </div>
@@ -244,6 +253,9 @@ function Footer({ onNavigate, onCategorySelect }: any) {
 function SupportPage({ onBack }: any) {
     const [form, setForm] = useState({name:'', email:'', subject:'General Inquiry', message:''});
     const [status, setStatus] = useState('');
+    const [replyEmail, setReplyEmail] = useState('');
+    const [replies, setReplies] = useState<SupportMsg[]>([]);
+    const [showReplies, setShowReplies] = useState(false);
 
     useEffect(() => { window.scrollTo(0,0); }, []);
 
@@ -257,29 +269,18 @@ function SupportPage({ onBack }: any) {
         else setStatus('error');
     };
 
+    const checkReplies = async (e:React.FormEvent) => {
+        e.preventDefault();
+        if(!replyEmail) return;
+        const res = await fetch(`${API_URL}/support/replies?email=${encodeURIComponent(replyEmail)}`);
+        if(res.ok) { const data = await res.json(); setReplies(Array.isArray(data) ? data : []); setShowReplies(true); }
+    };
+
     return (
         <div className="max-w-4xl mx-auto px-4 py-12">
             <button onClick={onBack} className="flex items-center gap-1 text-gray-500 mb-8 text-sm hover:text-naija"><ChevronRight className="w-4 h-4 rotate-180"/> Back to Home</button>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">Support & Contact</h2>
             <div className="grid md:grid-cols-2 gap-12">
-                <div>
-                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Contact & Support</h2>
-                    <div className="space-y-6">
-                        <div className="flex items-start gap-4">
-                            <MapPin className="w-6 h-6 text-naija shrink-0" />
-                            <div>
-                                <h3 className="font-bold text-gray-900 dark:text-white mb-1">Office Address</h3>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Suite 0.02, Maryam Babangida National Centre for Women Development,<br/>Opposite CBN Headquarters,<br/>Central Business District, Abuja, FCT.</p>
-                            </div>
-                        </div>
-                        <div className="flex items-start gap-4">
-                            <Mail className="w-6 h-6 text-naija shrink-0" />
-                            <div>
-                                <h3 className="font-bold text-gray-900 dark:text-white mb-1">Email</h3>
-                                <a href="mailto:theplatformreport@gmail.com" className="text-sm text-naija hover:underline">theplatformreport@gmail.com</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
                 <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Send Message</h3>
                     <form onSubmit={submit} className="space-y-4">
@@ -292,12 +293,77 @@ function SupportPage({ onBack }: any) {
                         <button disabled={status==='sending'} className="w-full bg-black text-white font-bold py-4 rounded-lg flex items-center justify-center gap-2">
                             {status==='sending' ? 'Sending...' : 'Send Message'} <Send className="w-4 h-4" />
                         </button>
-                        {status==='success' && <p className="text-green-600 text-center">Message sent successfully!</p>}
+                        {status==='success' && <p className="text-green-600 text-center text-sm">Message sent successfully! We'll respond soon.</p>}
                     </form>
+                </div>
+                <div>
+                    <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Check Replies</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Enter the email you used to send a message to view admin responses.</p>
+                        <form onSubmit={checkReplies} className="space-y-3">
+                            <input required type="email" placeholder="Your email address" value={replyEmail} onChange={e=>setReplyEmail(e.target.value)} className="w-full p-3 rounded-lg border dark:bg-gray-900 dark:text-white outline-none" />
+                            <button className="w-full bg-naija text-white font-bold py-3 rounded-lg text-sm">Check Replies</button>
+                        </form>
+                    </div>
+                    {showReplies && (
+                        <div className="mt-6 space-y-4">
+                            {replies.length === 0 ? (
+                                <p className="text-gray-500 text-sm text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">No replies yet. Please check back later.</p>
+                            ) : replies.map((msg: any) => (
+                                <div key={msg.id || msg._id} className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow border dark:border-gray-700">
+                                    <p className="text-xs text-gray-500 mb-1">{msg.subject} &middot; {new Date(msg.date).toLocaleDateString()}</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 bg-gray-50 dark:bg-gray-900 p-2 rounded">{msg.message}</p>
+                                    <div className="border-l-4 border-naija pl-3">
+                                        <p className="text-xs font-bold text-naija mb-1">Admin Reply &middot; {msg.replyDate ? new Date(msg.replyDate).toLocaleDateString() : ''}</p>
+                                        <p className="text-sm text-gray-800 dark:text-gray-200">{msg.reply}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
     );
+}
+
+function SupportMsgCard({ msg, onReplied }: { msg: SupportMsg; onReplied: (m: any) => void }) {
+  const [reply, setReply] = useState((msg as any).reply || '');
+  const [sending, setSending] = useState(false);
+  const hasReply = !!(msg as any).reply;
+
+  const send = async () => {
+    if (!reply.trim()) return;
+    setSending(true);
+    const res = await fetch(`${API_URL}/admin/support/${msg.id}/reply`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reply })
+    });
+    if (res.ok) { const updated = await res.json(); onReplied({ ...updated, id: updated.id || updated._id }); }
+    setSending(false);
+  };
+
+  return (
+    <div className={`bg-white dark:bg-gray-800 p-4 rounded shadow border-l-4 ${hasReply ? 'border-green-500' : 'border-blue-500'}`}>
+      <div className="flex justify-between mb-2">
+        <h4 className="font-bold text-sm dark:text-white">{msg.subject}</h4>
+        <span className="text-xs text-gray-500">{new Date(msg.date).toLocaleDateString()}</span>
+      </div>
+      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{msg.message}</p>
+      <p className="text-xs font-bold text-blue-600 mb-3">From: {msg.name} ({msg.email})</p>
+      {hasReply ? (
+        <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-100 dark:border-green-800">
+          <p className="text-xs font-bold text-green-600 mb-1">Your Reply:</p>
+          <p className="text-sm text-gray-700 dark:text-gray-300">{(msg as any).reply}</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <textarea value={reply} onChange={e => setReply(e.target.value)} placeholder="Type your reply..." className="w-full p-2 border rounded text-sm dark:bg-gray-900 dark:text-white dark:border-gray-700 resize-none h-20 outline-none" />
+          <button onClick={send} disabled={sending || !reply.trim()} className="bg-naija text-white px-4 py-2 rounded text-xs font-bold disabled:opacity-50">{sending ? 'Sending...' : 'Send Reply'}</button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, onDelete, onApproveSubmission, onRejectSubmission, onApproveAd, onRejectAd, onLogout }: any) {
@@ -400,14 +466,7 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
             <div className="space-y-3">
                 {supportMsgs.length === 0 && <p className="text-gray-500">No messages yet.</p>}
                 {supportMsgs.map(msg => (
-                    <div key={msg.id} className="bg-white dark:bg-gray-800 p-4 rounded shadow border-l-4 border-blue-500">
-                        <div className="flex justify-between mb-2">
-                            <h4 className="font-bold text-sm">{msg.subject}</h4>
-                            <span className="text-xs text-gray-500">{new Date(msg.date).toLocaleDateString()}</span>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-2">{msg.message}</p>
-                        <p className="text-xs font-bold text-blue-600">From: {msg.name} ({msg.email})</p>
-                    </div>
+                    <SupportMsgCard key={msg.id} msg={msg} onReplied={(updated: SupportMsg) => setSupportMsgs(supportMsgs.map(m => m.id === updated.id ? updated : m))} />
                 ))}
             </div>
         )}
@@ -685,7 +744,7 @@ function StaffLoginPage({ onLogin, onBack }: any) {
 
 // --- Main App Component ---
 
-function ArticleReader({ article, allArticles, onBack, onNavigateToArticle, isAdmin }: any) {
+function ArticleReader({ article, allArticles, activeAds = [], onBack, onNavigateToArticle, isAdmin }: any) {
   const [fullArticle, setFullArticle] = useState<Article | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentForm, setCommentForm] = useState({ author: '', email: '', content: '' });
@@ -758,7 +817,7 @@ function ArticleReader({ article, allArticles, onBack, onNavigateToArticle, isAd
       </div>
       <div className="flex gap-2 mb-6">
         {['facebook', 'twitter', 'whatsapp', 'linkedin'].map(p => (
-          <button key={p} onClick={() => handleSocialShare(p, display.title)} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-naija hover:text-white transition-colors">
+          <button key={p} onClick={() => handleSocialShare(p, display.title, display.id)} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-naija hover:text-white transition-colors">
             {p === 'facebook' && <Facebook className="w-4 h-4" />}
             {p === 'twitter' && <Twitter className="w-4 h-4" />}
             {p === 'whatsapp' && <MessageSquare className="w-4 h-4" />}
@@ -769,6 +828,26 @@ function ArticleReader({ article, allArticles, onBack, onNavigateToArticle, isAd
       <article className="prose dark:prose-invert max-w-none mb-12 text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-line">
         {display.content || display.excerpt}
       </article>
+
+      {/* In-article ad space */}
+      {activeAds.find((a: any)=>a.plan==='Sidebar Banner' || a.plan==='Sponsored Article') ? (
+        <a href={activeAds.find((a: any)=>a.plan==='Sidebar Banner' || a.plan==='Sponsored Article')?.adUrl||'#'} target="_blank" rel="noopener noreferrer" className="block mb-10 rounded-xl overflow-hidden border dark:border-gray-700 relative">
+          {activeAds.find((a: any)=>a.plan==='Sidebar Banner' || a.plan==='Sponsored Article')?.adImage && (
+            <img src={activeAds.find((a: any)=>a.plan==='Sidebar Banner' || a.plan==='Sponsored Article')?.adImage} className="w-full h-48 object-cover" />
+          )}
+          <div className="p-4 bg-white dark:bg-gray-800">
+            <p className="font-bold text-sm dark:text-white">{activeAds.find((a: any)=>a.plan==='Sidebar Banner' || a.plan==='Sponsored Article')?.adHeadline}</p>
+            <p className="text-xs text-gray-500 mt-1">{activeAds.find((a: any)=>a.plan==='Sidebar Banner' || a.plan==='Sponsored Article')?.adContent}</p>
+          </div>
+          <span className="absolute top-2 right-2 bg-black/50 text-white text-[10px] px-1.5 py-0.5 rounded">Ad</span>
+        </a>
+      ) : (
+        <div className="mb-10 h-32 bg-gray-50 dark:bg-gray-800 border-2 border-dashed dark:border-gray-700 flex flex-col items-center justify-center text-center p-4 rounded-xl">
+          <span className="text-sm font-bold text-gray-400">Ad Space Available</span>
+          <span className="text-xs text-gray-400 mt-1">Advertise on The Platform</span>
+        </div>
+      )}
+
       <div className="border-t dark:border-gray-700 pt-8 mb-12">
         <h3 className="text-xl font-bold dark:text-white mb-6 flex items-center gap-2"><MessageSquare className="w-5 h-5" /> Comments ({comments.length})</h3>
         <form onSubmit={submitComment} className="mb-8 space-y-3">
@@ -854,6 +933,13 @@ function App() {
       }
   };
 
+  // URL-based article routing helper
+  const navigateToArticle = (a: Article) => {
+    setSelectedArticle(a); setView('article');
+    window.history.pushState({ view: 'article', id: a.id }, '', `/article/${a.id}/${toSlug(a.title)}`);
+  };
+  const navigateHome = () => { setView('home'); setSelectedArticle(null); window.history.pushState({ view: 'home' }, '', '/'); };
+
   // Initial Load
   useEffect(() => {
     const link = document.createElement('link'); link.rel='icon'; 
@@ -861,9 +947,30 @@ function App() {
     document.head.appendChild(link);
     document.title = "The Platform";
     loadData();
+
+    // Handle browser back/forward
+    const onPop = (e: PopStateEvent) => {
+      if (e.state?.view === 'article' && e.state.id) {
+        const found = articles.find(a => a.id === e.state.id);
+        if (found) { setSelectedArticle(found); setView('article'); }
+        else setView('home');
+      } else { setView('home'); setSelectedArticle(null); }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
   }, []);
 
   const toggleTheme = () => { setIsDark(!isDark); document.documentElement.classList.toggle('dark'); };
+
+  // Deep-link: open article if URL matches /article/:id/...
+  useEffect(() => {
+    if (articles.length === 0) return;
+    const m = window.location.pathname.match(/^\/article\/([a-f0-9]+)/i);
+    if (m) {
+      const found = articles.find(a => a.id === m[1]);
+      if (found) { setSelectedArticle(found); setView('article'); }
+    }
+  }, [articles]);
 
   // Data Handlers
   const handleAdminLogin = async () => {
@@ -964,15 +1071,16 @@ function App() {
 
                 {filtered.length > 0 && (
                     <div className="mb-12 grid lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-2 cursor-pointer group" onClick={()=> {setSelectedArticle(filtered[0]); setView('article');}}>
-                            <div className="relative h-[400px] rounded-xl overflow-hidden mb-4 bg-gradient-to-br from-green-600 to-green-800">
+                        <div className="lg:col-span-2 cursor-pointer group" onClick={()=> navigateToArticle(filtered[0])}>
+                            <div className="relative h-[400px] rounded-xl overflow-hidden bg-gradient-to-br from-green-600 to-green-800">
                                 <LazyImage articleId={filtered[0].id} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 object-center" fallbackClass="w-full h-full flex items-center justify-center" />
-                                {filtered[0].isBreaking && <span className="absolute top-4 left-4 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse">Breaking News</span>}
-                            </div>
-                            <div className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                                <span className="bg-naija text-white text-xs font-bold px-2 py-1 rounded uppercase">{filtered[0].category}</span>
-                                <h2 className="text-3xl font-serif font-bold mt-2 mb-2 dark:text-white">{filtered[0].title}</h2>
-                                <p className="text-gray-600 dark:text-gray-400 line-clamp-2">{filtered[0].subHeadline || filtered[0].excerpt}</p>
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                                {filtered[0].isBreaking && <span className="absolute top-4 left-4 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse z-10">Breaking News</span>}
+                                <div className="absolute bottom-0 left-0 right-0 p-6 z-10">
+                                    <span className="bg-naija text-white text-xs font-bold px-2 py-1 rounded uppercase">{filtered[0].category}</span>
+                                    <h2 className="text-2xl md:text-3xl font-serif font-bold mt-2 mb-1 text-white drop-shadow-lg">{filtered[0].title}</h2>
+                                    <p className="text-gray-200 line-clamp-2 text-sm">{filtered[0].subHeadline || filtered[0].excerpt}</p>
+                                </div>
                             </div>
                         </div>
                         <div className="space-y-6">
@@ -980,7 +1088,7 @@ function App() {
                                 <h3 className="font-bold mb-4 dark:text-white flex items-center gap-2"><TrendingUp className="w-4 h-4 text-naija"/> Trending</h3>
                                 <div className="space-y-4">
                                     {articles.slice(1,4).map((a,i) => (
-                                        <div key={a.id} onClick={()=>{setSelectedArticle(a); setView('article');}} className="flex gap-3 cursor-pointer group">
+                                        <div key={a.id} onClick={()=>navigateToArticle(a)} className="flex gap-3 cursor-pointer group">
                                             <span className="text-2xl font-bold text-gray-300">0{i+1}</span>
                                             <div><h4 className="font-bold text-sm dark:text-white line-clamp-2 group-hover:text-naija">{a.title}</h4></div>
                                         </div>
@@ -1007,14 +1115,14 @@ function App() {
                     {feed.slice(1).map((item: any) => item.isAd ? (
                         <SponsoredArticleCard key={item.data.id} ad={item.data} />
                     ) : (
-                        <ArticleCard key={item.id} article={item} onClick={()=>{setSelectedArticle(item); setView('article');}} />
+                        <ArticleCard key={item.id} article={item} onClick={()=>navigateToArticle(item)} />
                     ))}
                 </div>
             </div>
         )}
 
         {view === 'article' && selectedArticle && (
-            <ArticleReader article={selectedArticle} allArticles={articles} onBack={()=>setView('home')} onNavigateToArticle={(a:Article)=>{setSelectedArticle(a); window.scrollTo(0,0);}} isAdmin={isAdmin} />
+            <ArticleReader article={selectedArticle} allArticles={articles} activeAds={activeAds} onBack={navigateHome} onNavigateToArticle={(a:Article)=>{navigateToArticle(a); window.scrollTo(0,0);}} isAdmin={isAdmin} />
         )}
         {view === 'submit' && <SubmitNewsPage onBack={()=>setView('home')} onSubmit={publishNews} />}
         {view === 'advertise' && <AdvertisePage onBack={()=>setView('home')} onSubmitAd={submitAd} />}
