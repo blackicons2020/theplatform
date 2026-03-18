@@ -18,7 +18,7 @@ const APP_URL = window.location.origin;
 // ✅ CENTRAL CATEGORIES LIST
 const CATEGORIES = [
   'Politics', 'Metro', 'Business', 'Technology', 'Sports', 
-  'Entertainment', 'Education', 'Leadership', 'Editorials'
+  'Entertainment', 'Education', 'Leadership', 'Editorials', 'International'
 ];
 
 // --- Error Boundary ---
