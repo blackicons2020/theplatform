@@ -282,7 +282,7 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
             {['live','pending','ads','support','compose'].map(t => (
                 <button key={t} onClick={()=>setTab(t)} className={`px-4 py-2 rounded-full text-xs font-bold uppercase ${tab===t ? 'bg-black text-white' : 'bg-white text-gray-600 border'}`}>
-                    {t} {t==='pending' && `(${pendingArticles.length})`} {t==='ads' && `(${ads.filter((a:any)=>a.status==='Pending').length})`}
+                    {t} {t==='pending' && `(${pendingArticles.length})`} {t==='ads' && `(${ads.filter((a:any)=>a.status==='pending').length})`}
                 </button>
             ))}
         </div>
@@ -298,6 +298,28 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
                         <div className="flex gap-2">
                             <button onClick={()=>handleEdit(a)} className="text-blue-500 text-xs font-bold border px-2 py-1 rounded">Edit</button>
                             <button onClick={()=>{if(confirm('Delete?')) onDelete(a.id)}} className="text-red-500 text-xs font-bold border px-2 py-1 rounded">Delete</button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        )}
+
+        {tab === 'pending' && (
+            <div className="space-y-3">
+                {pendingArticles.length === 0 && <p className="text-gray-500">No pending submissions.</p>}
+                {pendingArticles.map((a:any) => (
+                    <div key={a.id} className="bg-white dark:bg-gray-800 p-4 rounded shadow border-l-4 border-yellow-500">
+                        <div className="flex gap-3 items-start">
+                            {a.image && <img src={a.image} className="w-16 h-16 rounded object-cover flex-shrink-0" />}
+                            <div className="flex-1">
+                                <h4 className="font-bold text-sm dark:text-white">{a.title}</h4>
+                                <p className="text-xs text-gray-500 mt-1">By {a.author} | {a.category} | {new Date(a.date).toLocaleDateString()}</p>
+                                {a.excerpt && <p className="text-xs text-gray-600 mt-2 line-clamp-2">{a.excerpt}</p>}
+                            </div>
+                        </div>
+                        <div className="flex gap-2 mt-3">
+                            <button onClick={()=>onApproveSubmission(a)} className="bg-green-500 text-white px-3 py-2 rounded text-xs flex-1 font-bold">Approve & Publish</button>
+                            <button onClick={()=>onRejectSubmission(a.id)} className="bg-red-500 text-white px-3 py-2 rounded text-xs flex-1 font-bold">Reject</button>
                         </div>
                     </div>
                 ))}
@@ -345,13 +367,13 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
                     <div><p className="text-[10px] font-bold">Ad Creative</p>{a.adImage && <img src={a.adImage} className="h-24 object-cover border w-full" />}</div>
                 </div>
 
-                {a.status === 'Pending' && (
+                {a.status === 'pending' && (
                     <div className="flex gap-2">
                         <button onClick={()=>onApproveAd(a.id)} className="bg-green-500 text-white px-3 py-2 rounded text-xs flex-1 font-bold">Approve</button>
                         <button onClick={()=>onRejectAd(a.id)} className="bg-red-500 text-white px-3 py-2 rounded text-xs flex-1 font-bold">Reject</button>
                     </div>
                 )}
-                {a.status === 'Active' && <span className="text-green-600 font-bold text-xs flex items-center gap-1"><CheckCircle className="w-3 h-3"/> Active</span>}
+                {a.status === 'active' && <span className="text-green-600 font-bold text-xs flex items-center gap-1"><CheckCircle className="w-3 h-3"/> Active</span>}
             </div>
         ))}
 
