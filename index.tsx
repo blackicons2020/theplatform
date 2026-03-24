@@ -720,22 +720,21 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
     if (!PaystackPop) { alert('Payment gateway failed to load. Please refresh the page and try again.'); return; }
     try {
       const ref = `TPPAD-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-      const paystack = new PaystackPop();
-      paystack.newTransaction({
+      const handler = PaystackPop.setup({
         key: 'pk_live_b2c985a001f4c23b6bd1a19af4193f57c901446c',
         email,
         amount: selectedPlan.price * 100,
         currency: 'NGN',
         ref,
         metadata: { custom_fields: [{ display_name: 'Plan', variable_name: 'plan', value: selectedPlan.name }, { display_name: 'Client', variable_name: 'client', value: client }] },
-        onSuccess: async (transaction: any) => {
+        callback: async (response: any) => {
           setPaying(true);
           try {
             const res = await fetch(`${API_URL}/payment/verify-ad`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                reference: transaction.reference,
+                reference: response.reference,
                 clientName: client, email,
                 plan: selectedPlan.name, amount: selectedPlan.price,
                 adImage: adImg, adHeadline: headline,
@@ -750,12 +749,13 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
               alert(data.message || 'Payment verification failed. Contact support.');
             }
           } catch {
-            alert('Network error during verification. Please contact support with reference: ' + transaction.reference);
+            alert('Network error during verification. Please contact support with reference: ' + response.reference);
           }
           setPaying(false);
         },
-        onCancel: () => { alert('Payment was cancelled.'); }
+        onClose: () => { alert('Payment was cancelled.'); }
       });
+      handler.openIframe();
     } catch (err) {
       alert('Could not open payment window. Please refresh and try again.');
     }
