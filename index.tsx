@@ -353,12 +353,12 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
     } catch {}
   };
 
-  const submit = (e: any) => {
+  const submit = async (e: any) => {
     e.preventDefault();
     const payload: any = { ...form, isBreaking: breaking, status: 'published' };
     if(!showAuthor) payload.author = "The People's Platform";
-    if(editId) { onUpdate(editId, payload); alert('Updated!'); setEditId(null); }
-    else { onPublish(payload); alert('Published!'); }
+    if(editId) { await onUpdate(editId, payload); setEditId(null); }
+    else { await onPublish(payload); }
     setForm({ title: '', subHeadline: '', category: 'Politics', author: 'Staff Reporter', content: '', image: '' });
     setTab('live');
   };
@@ -1140,9 +1140,10 @@ function App() {
     if(res.ok) {
         const saved = await res.json();
         const mapped = mapArticleFromDB(saved);
-        if(mapped.status === 'published') { setArticles([mapped, ...articles]); alert('Published Live!'); }
-        else alert('Submitted for Review');
-        setView('home');
+        if(mapped.status === 'published') {
+            if(mapped.image) thumbCache[mapped.id] = mapped.image;
+            setArticles(prev => [mapped, ...prev]);
+        }
     }
   };
 
@@ -1150,7 +1151,9 @@ function App() {
     const res = await fetch(`${API_URL}/articles/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
     if(res.ok) {
         const updated = mapArticleFromDB(await res.json());
-        setArticles(articles.map(a => a.id === id ? updated : a));
+        if(updated.image) thumbCache[id] = updated.image;
+        else delete thumbCache[id];
+        setArticles(prev => prev.map(a => a.id === id ? updated : a));
     }
   };
 
