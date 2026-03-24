@@ -962,8 +962,10 @@ function ArticleReader({ article, allArticles, activeAds = [], onBack, onNavigat
           </button>
         ))}
       </div>
-      <article className="prose dark:prose-invert max-w-none mb-12 text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-line">
-        {display.content || display.excerpt}
+      <article className="prose dark:prose-invert max-w-none mb-12 text-gray-800 dark:text-gray-200 leading-relaxed">
+        {(display.content || display.excerpt || '').split(/\n\s*\n/).map((para: string, i: number) => (
+          <p key={i} className="mb-4">{para.trim()}</p>
+        ))}
       </article>
 
       {/* In-article ad space */}
