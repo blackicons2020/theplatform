@@ -14,8 +14,8 @@ export default async function handler(req, res) {
     // Not an article URL — serve default OG for homepage
     return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(buildHTML({
       title: `${SITE_NAME} - ${SITE_SLOGAN}`,
-      description: 'Your trusted source for Nigerian news and beyond. Empowering voices.',
-      image: `${SITE_URL}/og-default.png`,
+      description: 'Reinventing news reporting without bias.',
+      image: `${API_BASE}/og-default-image`,
       url: SITE_URL
     }));
   }
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
 
     const title = data.title || SITE_NAME;
     const description = data.description || '';
-    const imageUrl = data.hasImage ? `${API_BASE}/articles/${articleId}/og-image` : `${SITE_URL}/og-default.png`;
+    const imageUrl = data.hasImage ? `${API_BASE}/articles/${articleId}/og-image` : `${API_BASE}/og-default-image`;
     const articleUrl = `${SITE_URL}/${pathStr}`;
 
     return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(buildHTML({
@@ -38,8 +38,8 @@ export default async function handler(req, res) {
     // Fallback to default
     return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(buildHTML({
       title: `${SITE_NAME} - ${SITE_SLOGAN}`,
-      description: 'Your trusted source for Nigerian news and beyond. Empowering voices.',
-      image: `${SITE_URL}/og-default.png`,
+      description: 'Reinventing news reporting without bias.',
+      image: `${API_BASE}/og-default-image`,
       url: `${SITE_URL}/${pathStr}`
     }));
   }

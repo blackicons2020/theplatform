@@ -208,7 +208,7 @@ function Footer({ onNavigate, onCategorySelect }: any) {
               <div className="w-8 h-8 bg-naija rounded-full flex items-center justify-center text-white font-bold"><Globe className="w-5 h-5"/></div>
               <h2 className="font-bold text-lg">The People's Platform</h2>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Empowering voices through unbiased reporting.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Reinventing news reporting without bias.</p>
           </div>
           <div>
             <h3 className="font-bold mb-4 text-sm uppercase">News</h3>
@@ -228,7 +228,10 @@ function Footer({ onNavigate, onCategorySelect }: any) {
           <div>
             <h3 className="font-bold mb-4 text-sm uppercase">Connect</h3>
             <div className="flex gap-2 mb-4">
-              {[Facebook, Twitter, Instagram, Linkedin, Youtube].map((Icon,i)=>(<button key={i} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-naija hover:text-white transition-colors"><Icon className="w-4 h-4"/></button>))}
+              <a href="https://web.facebook.com/the.peoples.platfrom" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-naija hover:text-white transition-colors"><Facebook className="w-4 h-4"/></a>
+              <a href="https://www.instagram.com/thep.eoplesplatform" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-naija hover:text-white transition-colors"><Instagram className="w-4 h-4"/></a>
+              <a href="https://youtube.com/@thepeoplesplatform-v6e?si=Zi3AyCJePZ4wisci" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-naija hover:text-white transition-colors"><Youtube className="w-4 h-4"/></a>
+              <a href="https://www.tiktok.com/@thepeoplesplatfor5?_r=1&_t=ZS-94xu3zxJZQ2" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-naija hover:text-white transition-colors"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.87a8.16 8.16 0 004.76 1.52v-3.4a4.85 4.85 0 01-1-.3z"/></svg></a>
             </div>
           </div>
         </div>
