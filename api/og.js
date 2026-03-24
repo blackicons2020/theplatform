@@ -67,7 +67,6 @@ function buildHTML({ title, description, image, url }) {
   <meta name="twitter:title" content="${esc(title)}"/>
   <meta name="twitter:description" content="${esc(description)}"/>
   <meta name="twitter:image" content="${esc(image)}"/>
-  <script>window.location.replace("${esc(url)}");</script>
 </head>
 <body></body>
 </html>`;
