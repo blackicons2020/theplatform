@@ -714,27 +714,33 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
     }
   };
 
-  const launchPaystack = () => {
+  const launchPaystack = async () => {
     if (!client.trim() || !email.trim()) { alert('Please fill in your name and email first.'); return; }
     const PaystackPop = (window as any).PaystackPop;
     if (!PaystackPop) { alert('Payment gateway failed to load. Please refresh the page and try again.'); return; }
+    setPaying(true);
     try {
+      // Initialize transaction on server
+      const initRes = await fetch(`${API_URL}/payment/initialize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, amount: selectedPlan.price })
+      });
+      const initData = await initRes.json();
+      if (!initRes.ok || !initData.access_code) {
+        alert(initData.message || 'Could not initialize payment. Please try again.');
+        setPaying(false);
+        return;
+      }
       const paystack = new PaystackPop();
-      paystack.newTransaction({
-        key: 'pk_live_b2c985a001f4c23b6bd1a19af4193f57c901446c',
-        email,
-        amount: selectedPlan.price * 100, // kobo
-        currency: 'NGN',
-        ref: `TPPAD-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        metadata: { custom_fields: [{ display_name: 'Plan', variable_name: 'plan', value: selectedPlan.name }, { display_name: 'Client', variable_name: 'client', value: client }] },
+      paystack.resumeTransaction(initData.access_code, {
         onSuccess: async (transaction: any) => {
-          setPaying(true);
           try {
             const res = await fetch(`${API_URL}/payment/verify-ad`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                reference: transaction.reference,
+                reference: initData.reference,
                 clientName: client, email,
                 plan: selectedPlan.name, amount: selectedPlan.price,
                 adImage: adImg, adHeadline: headline,
@@ -743,20 +749,21 @@ function AdvertisePage({ onBack, onSubmitAd }: any) {
             });
             const data = await res.json();
             if (res.ok) {
-              alert('✅ Payment confirmed! Your ad has been submitted for review. We will activate it within 24 hours.');
+              alert('Payment confirmed! Your ad has been submitted for review. We will activate it within 24 hours.');
               onBack();
             } else {
-              alert(`❌ ${data.message || 'Payment verification failed. Contact support.'}`);
+              alert(data.message || 'Payment verification failed. Contact support.');
             }
           } catch {
-            alert('Network error during verification. Please contact support with your payment reference: ' + transaction.reference);
+            alert('Network error during verification. Please contact support with your payment reference: ' + initData.reference);
           }
           setPaying(false);
         },
-        onCancel: () => { alert('Payment was cancelled.'); }
+        onCancel: () => { alert('Payment was cancelled.'); setPaying(false); }
       });
     } catch (err) {
       alert('Could not open payment window. Please refresh and try again.');
+      setPaying(false);
     }
   };
 
@@ -965,12 +972,13 @@ function ArticleReader({ article, allArticles, activeAds = [], onBack, onNavigat
         </div>
       </div>
       <div className="flex gap-2 mb-6">
-        {['facebook', 'twitter', 'whatsapp', 'linkedin'].map(p => (
-          <button key={p} onClick={() => handleSocialShare(p, display.title, display.id)} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-naija hover:text-white transition-colors">
+        {['facebook', 'twitter', 'whatsapp', 'linkedin', 'youtube'].map(p => (
+          <button key={p} onClick={() => p === 'youtube' ? window.open('https://youtube.com/@thepeoplesplatform-v6e?si=Zi3AyCJePZ4wisci', '_blank') : handleSocialShare(p, display.title, display.id)} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-naija hover:text-white transition-colors">
             {p === 'facebook' && <Facebook className="w-4 h-4" />}
             {p === 'twitter' && <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>}
             {p === 'whatsapp' && <MessageSquare className="w-4 h-4" />}
             {p === 'linkedin' && <Linkedin className="w-4 h-4" />}
+            {p === 'youtube' && <Youtube className="w-4 h-4" />}
           </button>
         ))}
       </div>
