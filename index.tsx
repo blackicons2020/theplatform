@@ -932,8 +932,16 @@ function ArticleReader({ article, allArticles, activeAds = [], onBack, onNavigat
   const display = fullArticle || article;
   const related = allArticles.filter((a: Article) => a.id !== article.id && a.category === article.category).slice(0, 3);
 
-  // Inject NewsArticle JSON-LD structured data
+  // Dynamic title, meta description, canonical URL, and NewsArticle JSON-LD
   useEffect(() => {
+    document.title = `${display.title} - The People's Platform`;
+    let metaDesc = document.querySelector('meta[name="description"]') as HTMLMetaElement;
+    if (!metaDesc) { metaDesc = document.createElement('meta'); metaDesc.name = 'description'; document.head.appendChild(metaDesc); }
+    metaDesc.content = display.subHeadline || display.excerpt || display.title;
+    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
+    if (!canonical) { canonical = document.createElement('link'); canonical.rel = 'canonical'; document.head.appendChild(canonical); }
+    canonical.href = `https://www.thepeoplesplatform.online/article/${display.id}`;
+
     const script = document.createElement('script');
     script.type = 'application/ld+json';
     script.id = 'newsarticle-jsonld';
@@ -953,7 +961,14 @@ function ArticleReader({ article, allArticles, activeAds = [], onBack, onNavigat
     const old = document.getElementById('newsarticle-jsonld');
     if (old) old.remove();
     document.head.appendChild(script);
-    return () => { script.remove(); };
+    return () => {
+      script.remove();
+      document.title = "The People's Platform - Empowering voices";
+      const md = document.querySelector('meta[name="description"]') as HTMLMetaElement;
+      if (md) md.content = "The People's Platform - Empowering voices. Reinventing news reporting without bias.";
+      const cl = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
+      if (cl) cl.href = 'https://www.thepeoplesplatform.online';
+    };
   }, [display]);
 
   if (loading) return (
