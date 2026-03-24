@@ -339,11 +339,18 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
       }
   }, [tab]);
 
-  const handleEdit = (a: Article) => {
+  const handleEdit = async (a: Article) => {
     setEditId(a.id);
-    setForm({ title: a.title, subHeadline: a.subHeadline||'', category: a.category, author: a.author, content: a.content, image: a.image });
+    setForm({ title: a.title, subHeadline: a.subHeadline||'', category: a.category, author: a.author, content: a.content||'', image: a.image||'' });
     setBreaking(a.isBreaking||false);
     setTab('compose');
+    try {
+      const res = await fetch(`${API_URL}/articles/${a.id}`);
+      if(res.ok) {
+        const full = mapArticleFromDB(await res.json());
+        setForm(f => ({ ...f, content: full.content||f.content, image: full.image||f.image }));
+      }
+    } catch {}
   };
 
   const submit = (e: any) => {
@@ -620,6 +627,7 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
                         </div>
                     </div>
                     <input type="file" onChange={handleFile} className="text-xs" />
+                    {form.image && <div className="relative"><img src={form.image} className="w-full h-40 object-cover rounded" /><button type="button" onClick={()=>setForm({...form, image:''})} className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 text-xs flex items-center justify-center">×</button></div>}
                     <textarea required placeholder="Content" value={form.content} onChange={e=>setForm({...form, content:e.target.value})} className="w-full border p-2 rounded h-40 text-sm" />
                     <div className="flex items-center gap-2">
                         <input type="checkbox" checked={breaking} onChange={e=>setBreaking(e.target.checked)} />
