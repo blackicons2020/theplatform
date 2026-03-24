@@ -150,10 +150,10 @@ function Header({ onNavigate, toggleTheme, isDark }: any) {
           <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
             {isDark ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-gray-600" />}
           </button>
-          <button onClick={() => onNavigate('submit')} className="hidden md:flex items-center gap-1 bg-naija text-white px-3 py-1.5 rounded-full text-xs font-medium">
+          <button onClick={() => onNavigate('submit')} className="flex items-center gap-1 bg-naija text-white px-2 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] md:text-xs font-medium">
             <PenTool className="w-3 h-3" /> Submit News
           </button>
-          <button onClick={() => onNavigate('advertise')} className="hidden md:flex items-center gap-1 border border-naija text-naija px-3 py-1.5 rounded-full text-xs font-medium">Advertise</button>
+          <button onClick={() => onNavigate('advertise')} className="flex items-center gap-1 border border-naija text-naija px-2 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] md:text-xs font-medium">Advertise</button>
         </div>
       </div>
     </header>
