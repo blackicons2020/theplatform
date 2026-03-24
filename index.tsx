@@ -345,7 +345,7 @@ function AdminDashboard({ articles, pendingArticles, ads, onPublish, onUpdate, o
     setBreaking(a.isBreaking||false);
     setTab('compose');
     try {
-      const res = await fetch(`${API_URL}/articles/${a.id}`);
+      const res = await fetch(`${API_URL}/articles/${a.id}?_t=${Date.now()}`, { cache: 'no-cache' });
       if(res.ok) {
         const full = mapArticleFromDB(await res.json());
         setForm(f => ({ ...f, content: full.content||f.content, image: full.image||f.image }));
@@ -900,7 +900,7 @@ function ArticleReader({ article, allArticles, activeAds = [], onBack, onNavigat
     setLoading(true);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 20000);
-    fetch(`${API_URL}/articles/${article.id}`, { signal: controller.signal })
+    fetch(`${API_URL}/articles/${article.id}?_t=${Date.now()}`, { signal: controller.signal, cache: 'no-cache' })
       .then(r => { if(!r.ok) throw new Error('Not found'); return r.json(); })
       .then(data => { setFullArticle(mapArticleFromDB(data)); setLoading(false); })
       .catch(() => { setFullArticle(article); setLoading(false); });
