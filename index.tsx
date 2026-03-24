@@ -932,6 +932,30 @@ function ArticleReader({ article, allArticles, activeAds = [], onBack, onNavigat
   const display = fullArticle || article;
   const related = allArticles.filter((a: Article) => a.id !== article.id && a.category === article.category).slice(0, 3);
 
+  // Inject NewsArticle JSON-LD structured data
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.id = 'newsarticle-jsonld';
+    script.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'NewsArticle',
+      headline: display.title,
+      description: display.subHeadline || display.excerpt || '',
+      image: display.image ? [display.image] : [],
+      datePublished: display.date || new Date().toISOString(),
+      dateModified: display.date || new Date().toISOString(),
+      author: { '@type': 'Person', name: display.author || 'Citizen Reporter' },
+      publisher: { '@type': 'Organization', name: "The People's Platform", url: 'https://www.thepeoplesplatform.online', logo: { '@type': 'ImageObject', url: 'https://www.thepeoplesplatform.online/favicon.ico' } },
+      mainEntityOfPage: { '@type': 'WebPage', '@id': `https://www.thepeoplesplatform.online/article/${display.id}` },
+      articleSection: display.category || 'News'
+    });
+    const old = document.getElementById('newsarticle-jsonld');
+    if (old) old.remove();
+    document.head.appendChild(script);
+    return () => { script.remove(); };
+  }, [display]);
+
   if (loading) return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <button onClick={onBack} className="mb-6 flex items-center text-gray-500 text-sm hover:text-naija"><ChevronRight className="w-4 h-4 rotate-180" /> Back to Home</button>
@@ -1102,6 +1126,17 @@ function App() {
     link.href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23008753' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><line x1='2' y1='12' x2='22' y2='12'></line><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z'></path></svg>";
     document.head.appendChild(link);
     document.title = "The People's Platform - Empowering voices";
+
+    // Inject WebSite + Organization JSON-LD structured data
+    const ldScript = document.createElement('script');
+    ldScript.type = 'application/ld+json';
+    ldScript.id = 'website-jsonld';
+    ldScript.textContent = JSON.stringify([
+      { '@context': 'https://schema.org', '@type': 'WebSite', name: "The People's Platform", url: 'https://www.thepeoplesplatform.online', description: 'Reinventing news reporting without bias.', potentialAction: { '@type': 'SearchAction', target: 'https://www.thepeoplesplatform.online/?q={search_term_string}', 'query-input': 'required name=search_term_string' } },
+      { '@context': 'https://schema.org', '@type': 'Organization', name: "The People's Platform", url: 'https://www.thepeoplesplatform.online', logo: 'https://www.thepeoplesplatform.online/favicon.ico', sameAs: ['https://www.facebook.com/profile.php?id=61575227482498', 'https://www.instagram.com/thepeoplesplatformonline/', 'https://youtube.com/@thepeoplesplatform-v6e', 'https://www.tiktok.com/@thepeoplesplatformonline'] }
+    ]);
+    document.head.appendChild(ldScript);
+
     loadData();
 
     // Handle browser back/forward
