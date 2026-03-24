@@ -229,6 +229,7 @@ function Footer({ onNavigate, onCategorySelect }: any) {
             <h3 className="font-bold mb-4 text-sm uppercase">Connect</h3>
             <div className="flex gap-2 mb-4">
               <a href="https://web.facebook.com/the.peoples.platfrom" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-naija hover:text-white transition-colors"><Facebook className="w-4 h-4"/></a>
+              <a href="#" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-naija hover:text-white transition-colors"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
               <a href="https://www.instagram.com/thep.eoplesplatform" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-naija hover:text-white transition-colors"><Instagram className="w-4 h-4"/></a>
               <a href="https://youtube.com/@thepeoplesplatform-v6e?si=Zi3AyCJePZ4wisci" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-naija hover:text-white transition-colors"><Youtube className="w-4 h-4"/></a>
               <a href="https://www.tiktok.com/@thepeoplesplatfor5?_r=1&_t=ZS-94xu3zxJZQ2" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-naija hover:text-white transition-colors"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.87a8.16 8.16 0 004.76 1.52v-3.4a4.85 4.85 0 01-1-.3z"/></svg></a>
@@ -967,7 +968,7 @@ function ArticleReader({ article, allArticles, activeAds = [], onBack, onNavigat
         {['facebook', 'twitter', 'whatsapp', 'linkedin'].map(p => (
           <button key={p} onClick={() => handleSocialShare(p, display.title, display.id)} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-naija hover:text-white transition-colors">
             {p === 'facebook' && <Facebook className="w-4 h-4" />}
-            {p === 'twitter' && <Twitter className="w-4 h-4" />}
+            {p === 'twitter' && <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>}
             {p === 'whatsapp' && <MessageSquare className="w-4 h-4" />}
             {p === 'linkedin' && <Linkedin className="w-4 h-4" />}
           </button>
