@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
+    { "source": "/article/:path*", "destination": "/api/og?path=article/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
