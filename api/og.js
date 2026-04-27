@@ -93,10 +93,17 @@ export default async function handler(req, res) {
   }
 
   const articleId = match[1];
-  // Always point og:image to the article-specific endpoint.
-  // Even if the metadata fetch below times out, the image URL is still correct
-  // and the crawler will fetch it independently (backend may be warm by then).
-  const articleImage = `${API_BASE}/articles/${articleId}/og-image`;
+  // Point og:image at the FRONTEND proxy (/api/og-img) rather than the
+  // backend directly. The proxy runs in the same Vercel deployment with a
+  // 12-second timeout and aggressively caches the result at CDN edge.
+  const articleImage = `${SITE_URL}/api/og-img?id=${articleId}`;
+
+  // Pre-warm the backend image endpoint in parallel with the metadata fetch.
+  // This way the backend is already handling a request by the time the crawler
+  // separately fetches the og:image URL.
+  fetch(`${API_BASE}/articles/${articleId}/og-image`, {
+    signal: AbortSignal.timeout(5000)
+  }).catch(() => {});
 
   try {
     // 4-second timeout – WhatsApp/Facebook crawlers abort quickly
