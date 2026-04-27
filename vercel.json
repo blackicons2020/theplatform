@@ -1,7 +1,17 @@
 {
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
-    { "source": "/article/:path*", "destination": "/api/og?path=article/:path*" },
+    {
+      "source": "/article/:path*",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(bot|crawl|spider|facebookexternalhit|WhatsApp|Twitterbot|LinkedInBot|TelegramBot|Slackbot|Discordbot|Applebot|vkShare|Googlebot|bingbot|yandex|DuckDuckBot|Baiduspider|AhrefsBot|SemrushBot|ia_archiver|proximic)"
+        }
+      ],
+      "destination": "/api/og?path=article/:path*"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

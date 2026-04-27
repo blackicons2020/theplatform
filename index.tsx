@@ -1168,9 +1168,32 @@ function App() {
 
   const toggleTheme = () => { setIsDark(!isDark); document.documentElement.classList.toggle('dark'); };
 
-  // On page load, always start on homepage and reset URL
+  // On page load, handle deep-linked article URLs shared on social media.
+  // e.g. https://www.thepeoplesplatform.online/article/<id>/slug
   useEffect(() => {
-    if (window.location.pathname !== '/') {
+    const path = window.location.pathname;
+    const articleMatch = path.match(/^\/article\/([a-f0-9]{24})/i);
+    if (articleMatch) {
+      const id = articleMatch[1];
+      // Fetch the specific article in parallel with the general loadData() call.
+      // Once loading finishes the article will be shown immediately.
+      fetch(`${API_URL}/articles/${id}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data) {
+            const article = mapArticleFromDB(data);
+            if (article.image) thumbCache[id] = article.image;
+            setSelectedArticle(article);
+            setView('article');
+          } else {
+            // Article not found – fall back to homepage
+            window.history.replaceState({ view: 'home' }, '', '/');
+          }
+        })
+        .catch(() => {
+          window.history.replaceState({ view: 'home' }, '', '/');
+        });
+    } else if (path !== '/') {
       window.history.replaceState({ view: 'home' }, '', '/');
     }
   }, []);
