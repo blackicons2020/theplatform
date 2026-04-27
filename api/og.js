@@ -1,9 +1,9 @@
 // Vercel Serverless Function – Dynamic OG / social-media preview tags
 // ESM format (package.json has "type": "module")
 
-const API_BASE  = 'https://theplatformserver.vercel.app/api';
-const SITE_URL  = 'https://www.thepeoplesplatform.online';
-const SITE_NAME = "The People's Platform";
+const API_BASE   = 'https://theplatformserver.vercel.app/api';
+const SITE_URL   = 'https://www.thepeoplesplatform.online';
+const SITE_NAME  = "The People's Platform";
 const SITE_SLOGAN = 'Empowering voices';
 
 // Patterns that identify social-media / search crawlers
@@ -26,11 +26,9 @@ function buildHTML({ title, description, image, url, redirectUrl }) {
   <title>${esc(title)}</title>
   <meta name="description" content="${esc(description)}"/>
   <link rel="canonical" href="${esc(url)}"/>
-
-  <!-- Instant redirect for any human visitor who lands here -->
   <meta http-equiv="refresh" content="0; url=${esc(redirectUrl)}"/>
 
-  <!-- Open Graph – Facebook, WhatsApp, LinkedIn, Telegram, etc. -->
+  <!-- Open Graph – Facebook, WhatsApp, LinkedIn, Telegram -->
   <meta property="og:type"             content="article"/>
   <meta property="og:title"            content="${esc(title)}"/>
   <meta property="og:description"      content="${esc(description)}"/>
@@ -55,34 +53,26 @@ function buildHTML({ title, description, image, url, redirectUrl }) {
 <body>
   <h1>${esc(title)}</h1>
   <p>${esc(description)}</p>
-  <p>Redirecting… <a href="${esc(redirectUrl)}">Click here if not redirected</a>.</p>
+  <p><a href="${esc(redirectUrl)}">Read on The People's Platform</a></p>
 </body>
 </html>`;
 }
 
 export default async function handler(req, res) {
-  // Parse ?path= from the rewritten URL
+  // Parse ?path= param
   let pathStr = '';
   try {
     const url = new URL(req.url, 'http://localhost');
-    const raw = url.searchParams.get('path') || '';
-    pathStr = raw.replace(/^\/+/, '');
-  } catch {
-    pathStr = '';
-  }
+    pathStr = (url.searchParams.get('path') || '').replace(/^\/+/, '');
+  } catch { pathStr = ''; }
 
   const pageUrl     = pathStr ? `${SITE_URL}/${pathStr}` : SITE_URL;
   const redirectUrl = pageUrl;
 
-  // Safety net: if a real browser somehow reaches this endpoint (vercel.json
-  // should prevent it), send a 302 redirect straight to the React SPA.
+  // Safety net: real browser → 302 straight to the SPA
   const ua = req.headers['user-agent'] || '';
   if (!CRAWLER_RE.test(ua)) {
-    return res
-      .setHeader('Location', redirectUrl)
-      .setHeader('Cache-Control', 'no-store')
-      .status(302)
-      .send('');
+    return res.setHeader('Location', redirectUrl).setHeader('Cache-Control', 'no-store').status(302).send('');
   }
 
   const defaultMeta = {
@@ -95,7 +85,6 @@ export default async function handler(req, res) {
 
   // Match /article/<24-char hex id>
   const match = pathStr.match(/^article\/([a-f0-9]{24})/i);
-
   if (!match) {
     return res
       .setHeader('Content-Type', 'text/html; charset=utf-8')
@@ -104,17 +93,26 @@ export default async function handler(req, res) {
   }
 
   const articleId = match[1];
+  // Always point og:image to the article-specific endpoint.
+  // Even if the metadata fetch below times out, the image URL is still correct
+  // and the crawler will fetch it independently (backend may be warm by then).
+  const articleImage = `${API_BASE}/articles/${articleId}/og-image`;
 
   try {
-    const resp = await fetch(`${API_BASE}/articles/${articleId}/og`);
+    // 4-second timeout – WhatsApp/Facebook crawlers abort quickly
+    const ac    = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 4000);
+    const resp  = await fetch(`${API_BASE}/articles/${articleId}/og`, { signal: ac.signal });
+    clearTimeout(timer);
+
     if (!resp.ok) throw new Error('not found');
     const data = await resp.json();
 
     const title       = data.title || SITE_NAME;
-    const description = data.description || `Read "${title}" on ${SITE_NAME}`;
-    const image       = data.hasImage
-      ? `${API_BASE}/articles/${articleId}/og-image`
-      : `${API_BASE}/og-default-image`;
+    const description = data.description
+      ? data.description.slice(0, 200)
+      : `Read "${title}" on ${SITE_NAME}`;
+    const image = data.hasImage ? articleImage : `${API_BASE}/og-default-image`;
 
     return res
       .setHeader('Content-Type', 'text/html; charset=utf-8')
@@ -122,9 +120,17 @@ export default async function handler(req, res) {
       .send(buildHTML({ title, description, image, url: pageUrl, redirectUrl }));
 
   } catch {
+    // Metadata fetch failed / timed out.
+    // Still serve the article image so the platform at least shows a photo.
     return res
       .setHeader('Content-Type', 'text/html; charset=utf-8')
-      .setHeader('Cache-Control', 'public, s-maxage=60')
-      .send(buildHTML({ ...defaultMeta, url: pageUrl, redirectUrl }));
+      .setHeader('Cache-Control', 'public, s-maxage=30')
+      .send(buildHTML({
+        title:       SITE_NAME,
+        description: 'Read this article on The People\'s Platform',
+        image:       articleImage,   // ← article-specific image, not the green default!
+        url:         pageUrl,
+        redirectUrl,
+      }));
   }
 }
