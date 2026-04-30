@@ -105,17 +105,9 @@ export default async function handler(req, res) {
   }
 
   const articleId = match[1];
-  // Point og:image at the FRONTEND proxy (/api/og-img) rather than the
-  // backend directly. The proxy runs in the same Vercel deployment with a
-  // 12-second timeout and aggressively caches the result at CDN edge.
-  const articleImage = `${SITE_URL}/api/og-img?id=${articleId}`;
-
-  // Pre-warm the backend image endpoint in parallel with the metadata fetch.
-  // This way the backend is already handling a request by the time the crawler
-  // separately fetches the og:image URL.
-  fetch(`${API_BASE}/articles/${articleId}/og-image`, {
-    signal: AbortSignal.timeout(5000)
-  }).catch(() => {});
+  // Point og:image directly to the backend OG image endpoint
+  // Backend resizes images to 1200x630 for optimal social media rendering
+  const articleImage = `${API_BASE}/articles/${articleId}/og-image`;
 
   try {
     // 4-second timeout – WhatsApp/Facebook crawlers abort quickly
@@ -131,7 +123,8 @@ export default async function handler(req, res) {
     const description = data.description
       ? data.description.slice(0, 350)
       : `Read "${title}" on ${SITE_NAME}`;
-    const image = data.hasImage ? articleImage : `${API_BASE}/og-default-image`;
+    // Always use articleImage if article exists, regardless of hasImage flag
+    const image = articleImage;
 
     return res
       .setHeader('Content-Type', 'text/html; charset=utf-8')
