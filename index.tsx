@@ -85,14 +85,20 @@ const thumbCache: Record<string, string> = {};
 // URL slug helper
 const toSlug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 80);
 
-const handleSocialShare = (platform: string, title: string, articleId?: string) => {
+const handleSocialShare = (platform: string, title: string, articleId?: string, subtitle?: string) => {
     const articleUrl = articleId ? `${APP_URL}/article/${articleId}/${toSlug(title)}` : APP_URL;
-    const text = encodeURIComponent(`Read this on The People's Platform: ${title}`);
+    // Use subtitle if available, otherwise fallback to default text
+    const shareText = subtitle 
+      ? `${subtitle}\n\nRead more on The People's Platform:` 
+      : `Read this on The People's Platform: ${title}`;
+    
+    const text = encodeURIComponent(shareText);
     const url = encodeURIComponent(articleUrl);
     let link = '';
+    
     if(platform === 'facebook') link = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
     if(platform === 'twitter') link = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
-    if(platform === 'whatsapp') link = `https://wa.me/?text=${text}%20${url}`;
+    if(platform === 'whatsapp') link = `https://wa.me/?text=${text}%0A%0A${url}`;
     if(platform === 'linkedin') link = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
     if(platform === 'copy') { navigator.clipboard.writeText(articleUrl).catch(() => {}); return; }
     if(link) window.open(link, '_blank');
@@ -1006,7 +1012,7 @@ function ArticleReader({ article, allArticles, activeAds = [], onBack, onNavigat
       </div>
       <div className="flex gap-2 mb-6">
         {['facebook', 'twitter', 'whatsapp', 'linkedin', 'youtube'].map(p => (
-          <button key={p} onClick={() => p === 'youtube' ? window.open('https://youtube.com/@thepeoplesplatform-v6e?si=Zi3AyCJePZ4wisci', '_blank') : handleSocialShare(p, display.title, display.id)} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-naija hover:text-white transition-colors">
+          <button key={p} onClick={() => p === 'youtube' ? window.open('https://youtube.com/@thepeoplesplatform-v6e?si=Zi3AyCJePZ4wisci', '_blank') : handleSocialShare(p, display.title, display.id, display.subHeadline)} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-naija hover:text-white transition-colors">
             {p === 'facebook' && <Facebook className="w-4 h-4" />}
             {p === 'twitter' && <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>}
             {p === 'whatsapp' && <MessageSquare className="w-4 h-4" />}

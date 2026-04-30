@@ -117,7 +117,7 @@ export default async function handler(req, res) {
 
     const title       = data.title || SITE_NAME;
     const description = data.description
-      ? data.description.slice(0, 200)
+      ? data.description.slice(0, 350)
       : `Read "${title}" on ${SITE_NAME}`;
     const image = data.hasImage ? articleImage : `${API_BASE}/og-default-image`;
 
