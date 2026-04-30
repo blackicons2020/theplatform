@@ -87,21 +87,43 @@ const toSlug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').
 
 const handleSocialShare = (platform: string, title: string, articleId?: string, subtitle?: string) => {
     const articleUrl = articleId ? `${APP_URL}/article/${articleId}/${toSlug(title)}` : APP_URL;
-    // Use subtitle if available, otherwise fallback to default text
-    const shareText = subtitle 
-      ? `${subtitle}\n\nRead more on The People's Platform:` 
-      : `Read this on The People's Platform: ${title}`;
     
-    const text = encodeURIComponent(shareText);
-    const url = encodeURIComponent(articleUrl);
+    // Use subtitle if available, otherwise use title
+    const description = subtitle || title;
+    const twitterShareText = `${description}\n\n${articleUrl}`;
+    const whatsappShareText = `${description}\n\n${articleUrl}`;
+    const facebookUrl = encodeURIComponent(articleUrl);
+    
     let link = '';
     
-    if(platform === 'facebook') link = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
-    if(platform === 'twitter') link = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
-    if(platform === 'whatsapp') link = `https://wa.me/?text=${text}%0A%0A${url}`;
-    if(platform === 'linkedin') link = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
-    if(platform === 'copy') { navigator.clipboard.writeText(articleUrl).catch(() => {}); return; }
-    if(link) window.open(link, '_blank');
+    // Platform-specific sharing
+    if(platform === 'facebook') {
+      // Facebook uses the URL and pulls OG tags automatically
+      link = `https://www.facebook.com/sharer/sharer.php?u=${facebookUrl}`;
+    }
+    if(platform === 'twitter') {
+      // Twitter (X) - include text and URL
+      const twitterText = encodeURIComponent(twitterShareText.slice(0, 250)); // Twitter has limits
+      link = `https://twitter.com/intent/tweet?text=${twitterText}`;
+    }
+    if(platform === 'whatsapp') {
+      // WhatsApp - use wa.me with proper encoding
+      const waText = encodeURIComponent(whatsappShareText);
+      link = `https://wa.me/?text=${waText}`;
+    }
+    if(platform === 'linkedin') {
+      // LinkedIn uses the URL and pulls OG tags automatically
+      link = `https://www.linkedin.com/sharing/share-offsite/?url=${facebookUrl}`;
+    }
+    if(platform === 'copy') {
+      navigator.clipboard.writeText(articleUrl).catch(() => {});
+      return;
+    }
+    
+    if(link) {
+      // Open in a new window with specific size for better UX
+      window.open(link, '_blank', 'width=600,height=400,resizable=yes,scrollbars=yes');
+    }
 };
 
 // --- Components ---

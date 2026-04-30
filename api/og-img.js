@@ -36,11 +36,15 @@ export default async function handler(req, res) {
     const buf         = Buffer.from(await resp.arrayBuffer());
     const contentType = resp.headers.get('content-type') || 'image/jpeg';
 
-    return res
-      .setHeader('Content-Type', contentType)
-      // Cache for 24 hours at CDN edge; serve stale for 7 days while revalidating
-      .setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800')
-      .send(buf);
+    // Set proper headers for social media crawlers
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Length', buf.length);
+    // Cache for 24 hours at CDN edge; serve stale for 7 days while revalidating
+    res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    
+    return res.send(buf);
 
   } catch {
     // Forward to the default image on any failure

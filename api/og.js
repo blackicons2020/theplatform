@@ -28,7 +28,7 @@ function buildHTML({ title, description, image, url, redirectUrl }) {
   <link rel="canonical" href="${esc(url)}"/>
   <meta http-equiv="refresh" content="0; url=${esc(redirectUrl)}"/>
 
-  <!-- Open Graph – Facebook, WhatsApp, LinkedIn, Telegram -->
+  <!-- Open Graph – Facebook, WhatsApp, LinkedIn, Telegram, Messenger -->
   <meta property="og:type"             content="article"/>
   <meta property="og:title"            content="${esc(title)}"/>
   <meta property="og:description"      content="${esc(description)}"/>
@@ -41,6 +41,8 @@ function buildHTML({ title, description, image, url, redirectUrl }) {
   <meta property="og:url"              content="${esc(url)}"/>
   <meta property="og:site_name"        content="${esc(SITE_NAME)}"/>
   <meta property="og:locale"           content="en_NG"/>
+  <meta property="article:author"      content="${esc(SITE_NAME)}"/>
+  <meta property="article:published_time" content="${new Date().toISOString()}"/>
 
   <!-- Twitter / X Card -->
   <meta name="twitter:card"            content="summary_large_image"/>
@@ -49,11 +51,21 @@ function buildHTML({ title, description, image, url, redirectUrl }) {
   <meta name="twitter:image"           content="${esc(image)}"/>
   <meta name="twitter:image:alt"       content="${esc(title)}"/>
   <meta name="twitter:site"            content="@thepeoplesplatform"/>
+  <meta name="twitter:creator"         content="@thepeoplesplatform"/>
+
+  <!-- WhatsApp / Messenger / Discord -->
+  <meta name="theme-color"             content="#008751"/>
+  <meta property="og:video"            content="${esc(image)}"/>
+  <meta property="og:video:secure_url" content="${esc(image)}"/>
+  <meta property="og:video:type"       content="image/jpeg"/>
+  <meta property="og:video:width"      content="1200"/>
+  <meta property="og:video:height"     content="630"/>
 </head>
 <body>
   <h1>${esc(title)}</h1>
   <p>${esc(description)}</p>
   <p><a href="${esc(redirectUrl)}">Read on The People's Platform</a></p>
+  <img src="${esc(image)}" alt="${esc(title)}" style="max-width:100%;"/>
 </body>
 </html>`;
 }
